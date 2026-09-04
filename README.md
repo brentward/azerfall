@@ -1,135 +1,85 @@
-# RP6502 Project Template
+# Azerfall
 
-Scaffolding for a new Picocomputer 6502 software project. It builds with
-either 6502 compiler, cc65 or llvm-mos, and switching between them is one
-setting. Three "Hello, world!" examples are included to start from:
+Azerfall is a 2D tile-based adventure game being ported to the
+[RP6502](https://picocomputer.github.io/) platform. The project is currently
+in its early porting stage: the RP6502 build and ROM packaging are in place,
+and the next milestone is a video and input smoke test.
 
- * `src/main.c` — C, and builds with either compiler.
- * `src/main-cc65.s` — assembly for cc65, which uses the ca65 syntax.
- * `src/main-llvm-mos.s` — the same program in llvm-mos assembly.
+The original game is [My2DGame](https://github.com/brentward/My2DGame), a Java
+desktop game with tile-based exploration, combat, characters, items, maps,
+and progression. Azerfall is a new C adaptation for the resource and runtime
+constraints of the RP6502 rather than a direct line-by-line translation.
 
-Make sure `CMakeLists.txt` points to the one you want, then delete the others.
-The two assembly files pick up where the C runtime leaves off, so they read
-alike; only the assembler directives differ.
+See [PORTING_PLAN.md](PORTING_PLAN.md) for the current milestones and the
+planned order for bringing the game systems across.
 
-### Requirements:
- * CMake 3.21 or newer
- * Python 3
- * git
- * A build tool CMake can drive — GNU Make or Ninja
- * At least one 6502 compiler:
-   [CC65](https://cc65.github.io/getting-started.html) and/or
-   [LLVM-MOS](https://llvm-mos.org/wiki/Welcome). Install both if you want to
-   try both; nothing here makes you choose once.
+## Requirements
 
-CC65 needs a source build. LLVM-MOS has its own installer. Do not use the
-CC65 or LLVM-MOS from a package manager, we need the latest version you
-can tolerate. The other requirements aren't as version sensitive.
+- CMake 3.21 or newer
+- Python 3
+- Git
+- GNU Make, Ninja, or another build tool supported by CMake
+- [CC65](https://cc65.github.io/getting-started.html) and/or
+  [LLVM-MOS](https://llvm-mos.org/wiki/Welcome)
 
-Linux:
-```bash
-$ sudo apt install cmake python3 git build-essential
-```
+The project uses CMake presets to select the 6502 compiler. The RP6502 tools
+and emulator are downloaded when the project is configured.
 
-Windows:
- * `winget install -e --id Git.Git`
- * `winget install -e --id Kitware.CMake`
- * `winget install -e --id GnuWin32.Make`
-   Add `C:\Program Files (x86)\GnuWin32\bin` to your PATH.
- * The current snapshot of [CC65](https://cc65.github.io/getting-started.html) -
-   Do not skip the step about adding the `bin` directory to your PATH.
-   And/or an install of [LLVM-MOS](https://llvm-mos.org/wiki/Welcome).
- * Install Python by typing `python3` in a command prompt, which will launch
-   the Microsoft Store where you can start the installation. If Python runs,
-   this has already been done - exit Python with Ctrl-Z plus Enter.
+## Build
 
-### Getting started:
-**The documentation is [RP6502-SDK](https://picocomputer.github.io/sdk.html).**
-It covers VS Code, assets, linker configuration, and packaging in full.
-The remainder of this README is a quick start guide for someone already
-familiar with the tools.
-
-
-### Use the template:
-Go to the [GitHub template](https://github.com/picocomputer/rp6502-sdk) and
-select "Use this template" then "Create a new repository". GitHub will create
-a clean project for you to start with. Then you can clone the repository.
+List the available presets, configure one, and build the ROM:
 
 ```bash
-$ git clone [path_to_github]
-$ cd [to_where_it_cloned]
+cmake --list-presets
+cmake --preset cc65/Debug
+cmake --build --preset cc65/Debug
 ```
 
-### Building:
-The compiler is a CMake preset. There is a Debug and a Release of each,
-building into its own directory under `build/`, so you can switch back and
-forth without a rebuild from scratch. Debugging needs a Debug build.
+The resulting ROM is:
+
+```text
+build/cc65/debug/azerfall.rp6502
+```
+
+Release builds use the corresponding `cc65/Release` preset. LLVM-MOS presets
+are available when LLVM-MOS is installed.
+
+## Run
+
+Use the included tool to upload the ROM and attach to its console:
 
 ```bash
-$ cmake --list-presets
-$ cmake --preset cc65/Debug
-$ cmake --build --preset cc65/Debug
+python3 tools/rp6502.py run build/cc65/debug/azerfall.rp6502
 ```
 
-That leaves a ROM at `build/cc65/debug/hello.rp6502`. The first configure
-fetches `tools/` and the emulator; nothing is fetched after that.
+The default device is `/dev/cu.usbmodem*` on macOS, `/dev/ttyACM0` on Linux,
+and `COM1` on Windows. Pass `-d` to select another serial device, or provide
+a hostname and `-k` passkey to connect over telnet.
 
-### Running:
-`tools/rp6502.py` sends a ROM to a Picocomputer and gives you its console.
-It needs nothing but Python.
+For the current boot milestone, the console should show:
 
-```bash
-$ python3 tools/rp6502.py run build/cc65/debug/hello.rp6502
+```text
+AZERFALL RP6502 PORT
+runtime online
+next milestone: video and input
 ```
 
-That uploads the ROM, starts it, and attaches a terminal. Ctrl-A then X exits,
-Ctrl-A then B sends a break. Other commands:
+## Documentation
 
-The device defaults to the USB serial port where the Picocomputer usually
-mounts: `/dev/ttyACM0` on Linux, `/dev/cu.usbmodem*` on macOS, `COM1` on
-Windows. Override it with `-d`, or connect over telnet by giving a hostname
-plus the passkey:
+- [RP6502 SDK documentation](https://picocomputer.github.io/sdk.html)
+- [Picocomputer](https://picocomputer.github.io/)
+- [CC65](https://cc65.github.io/)
+- [LLVM-MOS](https://llvm-mos.org/)
 
-```bash
-$ python3 tools/rp6502.py -d /dev/ttyUSB0 run build/cc65/debug/hello.rp6502
-$ python3 tools/rp6502.py -d picocomputer.local -k mykey term
-```
+## Credits
 
-### The tools directory:
-`tools/` holds the python and CMake scripts which drive the SDK.
-A new project downloads them the first time you configure with CMake.
-The emulator for your machine comes down at the same time and into the
-same directory.
+Azerfall is based on my Java game project, [My2DGame](https://github.com/brentward/My2DGame), which was originally created by following RyiSnow's *How to Make a 2D Game in Java* / *Blue Boy Adventure* tutorial series.
 
-To pull down the current versions:
+My2DGame deviated from and expanded upon the tutorial implementation in
+various areas, and Azerfall is a new adaptation of that project for the
+RP6502 platform.
 
-```bash
-$ cmake -P tools/rp6502.cmake
-```
+Special thanks to RyiSnow for creating the original tutorial series that
+inspired this project.
 
-### Updating an older project:
-Projects made before this template merged cc65 and llvm-mos have their compiler
-wired into the top of `CMakeLists.txt`, and a `tools/` that predates any of
-this. Start by copying this template's `tools/rp6502.cmake` over yours. That
-name used to be the cc65 toolchain file; it is now the small script that
-fetches everything, and the toolchain it replaces comes back as
-`tools/cc65-toolchain.cmake` on the first configure.
-
-Then replace everything above `project()` with:
-
-```cmake
-cmake_minimum_required(VERSION 3.21)
-
-include(${CMAKE_CURRENT_LIST_DIR}/tools/rp6502.cmake)
-```
-
-Delete `tools/CMakeLists.txt` and the `add_subdirectory(tools)` line that
-pulled it in — the `include()` above replaces both. Copy `CMakePresets.json`
-from this template as well; that is where the compiler is chosen now. Old
-projects called `rp6502_executable()` with the address their compiler happened
-to use, and `DATA default RESET default` works under both.
-
-### Documentation:
- * [Picocomputer](https://picocomputer.github.io)
- * [CC65](https://cc65.github.io/)
- * [LLVM-MOS](https://llvm-mos.org/)
+**Original tutorial:** [RyiSnow's Blue Boy Adventure / How to Make a 2D Game in Java](https://www.youtube.com/playlist?list=PL_QPQmz5C6WUF-pOQDsbsKbaBZqXj4qSq)

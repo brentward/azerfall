@@ -3,5 +3,7 @@
 
 int main(void)
 {
-    puts("Hello, world!");
+    puts("AZERFALL RP6502 PORT");
+    puts("runtime online");
+    puts("next milestone: video and input");
 }
