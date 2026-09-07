@@ -1,6 +1,17 @@
-__pycache__
+# macOS
+.DS_Store
+
+# CMake and compiler output
+/build/
+CMakeUserPresets.json
+compile_commands.json
+
+# RP6502 local settings, emulator, and packaged ROMs
 /.rp6502
-/build
-/CMakeUserPresets.json
 /tools/rp6502-emu
 /tools/rp6502-emu.exe
+*.rp6502
+
+# Python caches
+__pycache__/
+*.py[cod]
