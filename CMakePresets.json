@@ -36,6 +36,36 @@
             }
         },
         {
+            "name": "cc65/Windows-Debug",
+            "displayName": "cc65/Windows Debug (GNU Make)",
+            "inherits": "cc65/Debug",
+            "generator": "MinGW Makefiles",
+            "binaryDir": "${sourceDir}/build/cc65/windows-debug",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_MAKE_PROGRAM": "make"
+            }
+        },
+        {
+            "name": "cc65/Windows-Release",
+            "displayName": "cc65/Windows Release (GNU Make)",
+            "inherits": "cc65/Release",
+            "generator": "MinGW Makefiles",
+            "binaryDir": "${sourceDir}/build/cc65/windows-release",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_MAKE_PROGRAM": "make"
+            }
+        },
+        {
             "name": "llvm-mos/Debug",
             "displayName": "llvm-mos/Debug",
             "description": "Build with llvm-mos. Debug information, needed for source-level debugging.",
@@ -59,6 +89,16 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "cc65/Windows-Debug",
+            "configurePreset": "cc65/Windows-Debug",
+            "targets": ["all"]
+        },
+        {
+            "name": "cc65/Windows-Release",
+            "configurePreset": "cc65/Windows-Release",
+            "targets": ["all"]
+        },
         {
             "name": "cc65/Debug",
             "displayName": "cc65/Debug",

@@ -44,6 +44,19 @@ build/cc65/debug/azerfall.rp6502
 Release builds use the corresponding `cc65/Release` preset. LLVM-MOS presets
 are available when LLVM-MOS is installed.
 
+On Windows with GNU Make (`make.exe`) and cc65 on PATH, use:
+
+```powershell
+cmake --preset cc65/Windows-Debug
+cmake --build --preset cc65/Windows-Debug
+```
+
+These presets explicitly select MinGW Makefiles to avoid falling back to
+NMake. In VS Code, run **CMake: Select Configure Preset** and select
+**cc65/Windows Debug (GNU Make)**, then build. The ROM is written to
+`build/cc65/windows-debug/azerfall.rp6502`. Use `cc65/Windows-Release`
+for a release build.
+
 ## Run
 
 Use the included tool to upload the ROM and attach to its console:

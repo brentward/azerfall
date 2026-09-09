@@ -12,4 +12,5 @@ target_sources(azerfall PRIVATE
     src/grass_path.c
     src/game.c
     src/player_sprites.c
+    src/player.c
 )

@@ -10,10 +10,10 @@ int main(void)
     unsigned char frame;
 
     puts("AZERFALL RP6502 PORT");
-    puts("runtime online");
-    puts("next milestone: video and input");
+    puts("Video and input test");
+    puts("next milestone: core runtime and map renderer");
 
-    init_game();
+    game_init();
 
     frame = RIA.vsync;
 
@@ -24,9 +24,6 @@ int main(void)
         }
         frame = RIA.vsync;
 
-        update_input();
-        update_game();
-        update_animation();
-        draw();
+        game_update();
     }
 }

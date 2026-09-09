@@ -22,18 +22,40 @@
 #define BACKGROUND_CONFIG 0xFF00
 #define BACKGROUND_DATA  0x0000
 #define BACKGROUND_PALETTE 0xFFFF
-#define PLAYER_SPRITES (BACKGROUND_TILES + GRASS_PATH_TILES_TOTAL_BYTES)
-#define PLAYER_SPRITES_CONFIG (BACKGROUND_CONFIG + sizeof(vga_mode2_config_t))
-#define PLAYER_PALETTE 0xFFFF
 
-void update_game(void);
-void update_animation(void);
+#define BYTES_PER_SPRITE 128
+
+// GAMEPAD
+#define GAMEPAD_INPUT 0xFF80U // 40 bytes of gamepad data
+
+// USB KEYBOARD
+#define KEYBOARD_INPUT 0xFF10U // KEYBOARD_BYTES (32 bytes, 256 bits) of key press bitmask data
+// 256 bytes HID code max, stored in 32 uint8
+#define KEYBOARD_BYTES 32
+// keystates[code>>3] gets contents from correct byte in array
+// 1 << (code&7) moves a 1 into proper position to mask with byte contents
+// final & gives 1 if key is pressed, 0 if not
+#define key(code) (keystates[code >> 3] & (1 << (code & 7)))
+extern uint8_t keystates[KEYBOARD_BYTES];
+
+typedef struct
+{
+    bool up_pressed;
+    bool down_pressed;
+    bool left_pressed;
+    bool right_pressed; 
+} InputState;
+
+extern InputState Input;
+
+
+void game_update(void);
+void animation_update(void);
 void draw(void);
-void init_background(void);
-void init_player_sprites(void);
-void init_game(void);
-void init_input(void);
-void update_input(void);
+void background_init(void);
+void game_init(void);
+void input_init(void);
+void input_update(void);
 
 
 #endif
