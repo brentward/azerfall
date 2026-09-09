@@ -13,36 +13,13 @@ int player_speed = 4;
 
 void game_update(void)
 {
-    // Update game logic here
         input_update();
         animation_update();
-        draw();
 }
-
-// void update_player(void)
-// {
-//     if (Input.up_pressed)
-//         player_y -= player_speed;
-//     if (Input.down_pressed)
-//         player_y += player_speed;
-//     if (Input.left_pressed)
-//         player_x -= player_speed;
-//     if (Input.right_pressed)
-//         player_x += player_speed;
-//     xram0_struct_set(PLAYER_SPRITE_CONFIG, vga_mode5_sprite_t, x_pos_px, player_x);
-//     xram0_struct_set(PLAYER_SPRITE_CONFIG, vga_mode5_sprite_t, y_pos_px, player_y);
-
-// }
 
 void animation_update(void)
 {
     player_update();
-    // Update animation logic here
-}
-
-void draw(void)
-{
-    // Draw game elements here
 }
 
 void game_init(void)
@@ -66,11 +43,6 @@ void background_init(void)
     xram0_struct_set(0xFF00, vga_mode2_config_t, xram_palette_ptr, BACKGROUND_PALETTE);
     xram0_struct_set(0xFF00, vga_mode2_config_t, xram_tile_ptr, BACKGROUND_TILES);
 
-    // xram0_struct_set(PLAYER_SPRITE_CONFIG, vga_mode5_sprite_t, x_pos_px, player_x);
-    // xram0_struct_set(PLAYER_SPRITE_CONFIG, vga_mode5_sprite_t, y_pos_px, player_y);
-    // xram0_struct_set(PLAYER_SPRITE_CONFIG, vga_mode5_sprite_t, xram_sprite_ptr, PLAYER_SPRITES + PLAYER_WALK_DIR0_FRAME0);
-    // xram0_struct_set(PLAYER_SPRITE_CONFIG, vga_mode5_sprite_t, palette_ptr, PLAYER_PALETTE);
-
     RIA.addr0 = BACKGROUND_DATA;
     RIA.step0 = 1;
     for (i = 0; i < BACKGROUND_TILES; i++)
@@ -86,18 +58,6 @@ void background_init(void)
         RIA.rw0 = grass_path_tiles[i];
     }
 }
-
-// void init_player_sprites(void)
-// {
-//     int i;
-//     RIA.addr0 = PLAYER_SPRITES;
-//     for (i = 0; i < PLAYER_SPRITES_TOTAL_BYTES; i++)
-//     {
-//         RIA.rw0 = player_sprites[i];
-//     }
-//     // LENGTH is the number of sprite configs, not a byte size.
-//     xreg_vga_mode(5, 10, PLAYER_SPRITE_CONFIG, 1, 2);
-// }
 
 void input_init(void)
 {

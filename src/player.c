@@ -124,7 +124,3 @@ void player_animation_update(void) {
     }
     xram0_struct_set(PLAYER_SPRITE_CONFIG, vga_mode5_sprite_t, xram_sprite_ptr, PLAYER_SPRITES + (sprite_index * BYTES_PER_SPRITE));
 }
-
-void player_draw(void) {
-    // Draw player on the screen here
-}

@@ -45,6 +45,5 @@ extern Player player;
 void player_init(void);
 void player_update(void);
 void player_animation_update(void);
-void player_draw(void);
 
 #endif // PLAYER_H

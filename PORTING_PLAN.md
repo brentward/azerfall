@@ -24,7 +24,7 @@ reference material, not files to translate one-for-one.
    - Draw a fixed tile-sized test scene and move a cursor with one input
      action.
    - Acceptance: a stable 320x192 scene responds to input on hardware or the
-     emulator.V
+     emulator.
 
 3. **Core runtime and map renderer**
    - Add a fixed-rate update loop and explicit game states.
