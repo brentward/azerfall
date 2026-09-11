@@ -3,10 +3,15 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "player.h"
+#include "entity.h"
 
-#define PLAYER_SPRITES (BACKGROUND_TILES + GRASS_PATH_TILES_TOTAL_BYTES)
+#define PLAYER_SPRITES (BACKGROUND_TILES + WORLD01_TILES_MAP_TOTAL_BYTES)
 #define PLAYER_SPRITE_CONFIG 0xFF40U // Keep clear of keyboard data at 0xFF10-0xFF2F.
 #define PLAYER_PALETTE 0xFFFF
+#define PLAYER_SCREEN_X SCREEN_WIDTH / 2 - HALF_TILE_SIZE
+#define PLAYER_SCREEN_Y SCREEN_HEIGHT / 2 - HALF_TILE_SIZE
+
 
 typedef enum {
     PLAYER_IDLE,
@@ -15,24 +20,9 @@ typedef enum {
     PLAYER_DYING
 } PlayerState;
 
-typedef enum {
-    DIR_DOWN,
-    DIR_DOWN_LEFT,
-    DIR_LEFT,
-    DIR_UP_LEFT,
-    DIR_UP,
-    DIR_UP_RIGHT,
-    DIR_RIGHT,
-    DIR_DOWN_RIGHT
-} Direction;
 
 typedef struct {
-    int16_t x;
-    int16_t y;
-
-    int8_t speed;
-
-    Direction direction;
+    Entity entity;
     PlayerState state;
 
     uint8_t animation_frame;

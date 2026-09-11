@@ -1,7 +1,7 @@
 #include <rp6502.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include "game.h"
+#include "game\game.h"
 
 
 
