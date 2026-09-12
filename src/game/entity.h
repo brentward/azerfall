@@ -2,7 +2,6 @@
 #define ENTITY_H
 
 #include <stdint.h>
-#include "player.h"
 
 typedef struct {
     int16_t x;

@@ -14,4 +14,6 @@ target_sources(azerfall PRIVATE
     generated/player_sprites.c
     src/game/player.c
     src/input/input.c
+    src/world/collision.c
+    src/world/map.c
 )

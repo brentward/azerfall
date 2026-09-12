@@ -19,11 +19,13 @@ int main(void)
 
     while (true)
     {
+        game_update();
+        frame = RIA.vsync;
         while (RIA.vsync == frame)
         {
         }
-        frame = RIA.vsync;
-
-        game_update();
+        
+        draw();
+        
     }
 }

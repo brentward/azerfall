@@ -5,7 +5,6 @@ InputState input_state = {0};
 
 uint8_t keystates[KEYBOARD_BYTES] = {0};
 
-
 void input_init(void)
 {
     int i;
@@ -23,7 +22,6 @@ void input_init(void)
     xreg_ria_keyboard(KEYBOARD_INPUT);
     xreg_ria_gamepad(GAMEPAD_INPUT);
 }
-
 
 #define GAMEPAD_SIZE 10         // bytes per gamepad in XRAM
 #define GAMEPAD_CONNECTED 0x80  // byte 0 bit 7
