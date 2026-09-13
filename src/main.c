@@ -1,9 +1,9 @@
-#include <rp6502.h>
 #include <stdio.h>
 #include <stdbool.h>
+
+#include <rp6502.h>
+
 #include "game\game.h"
-
-
 
 int main(void)
 {

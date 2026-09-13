@@ -1,14 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <rp6502.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include "../../generated/world01_tiles.h"
-#include "../../generated/player_sprites.h"
-
 // Screen Settings
-
 #define SCREEN_WIDTH        320
 #define SCREEN_HEIGHT       180
 
@@ -27,8 +20,6 @@
 #define WORLD_WIDTH_TILES  50
 #define WORLD_HEIGHT_TILES 50
 
-
-
 #define BYTES_PER_SPRITE 128
 
 typedef enum {
@@ -37,7 +28,7 @@ typedef enum {
     GAME_STATE_PAUSE,
     GAME_STATE_DIALOGUE,
     GAME_STATE_CHARACTER,
-    GAME_STAGE_OPTIONS,
+    GAME_STATE_OPTIONS,
     GAME_STATE_GAME_OVER,
     GAME_STATE_TRANSITION,
     GAME_STATE_TRADE,
@@ -46,13 +37,12 @@ typedef enum {
     GAME_STATE_CUTSCENE
 } GameState;
 
-extern GameState game_state;
+typedef struct {
+    GameState state;
+} Game;
 
 void game_update(void);
 void draw(void);
-// void animation_update(void);
-// void draw(void);
-void background_init(void);
 void game_init(void);
 
 #endif

@@ -1,5 +1,19 @@
 #include "player.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <rp6502.h>
+
+#include "../input/input.h"
+#include "../world/collision.h"
+#include "../../generated/player_sprites.h"
+#include "../../generated/world01_tiles.h"
+
+#define PLAYER_SPRITES (BACKGROUND_TILES + WORLD01_TILES_TOTAL_BYTES)
+
+static void player_animation_update(Player *player);
 
 void player_init(Player *player)
 {
@@ -34,12 +48,18 @@ void player_graphics_init(void)
     xram0_struct_set(PLAYER_SPRITE_CONFIG, vga_mode5_sprite_t, palette_ptr, PLAYER_PALETTE);
 
     RIA.addr0 = PLAYER_SPRITES;
+    RIA.step0 = 1;
     for (i = 0; i < PLAYER_SPRITES_TOTAL_BYTES; i++)
     {
         RIA.rw0 = player_sprites[i];
     }
     // LENGTH is the number of sprite configs, not a byte size.
     xreg_vga_mode(5, 10, PLAYER_SPRITE_CONFIG, 1, 2);
+    // if (xreg_vga_mode(5, 10, PLAYER_SPRITE_CONFIG, 1, 2) < 0)
+    // {
+    //     perror("VGA sprite setup");
+    //     exit(EXIT_FAILURE);
+    // }
 }
 
 void player_update(Player *player)
@@ -150,7 +170,7 @@ void player_update(Player *player)
     player_animation_update(player);
 }
 
-void player_animation_update(Player *player)
+static void player_animation_update(Player *player)
 {
     // Update player animation based on state and direction
     // This is a placeholder for actual animation logic

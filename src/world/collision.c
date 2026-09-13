@@ -1,5 +1,9 @@
 #include "collision.h"
 
+#include "map.h"
+#include "../game/game.h"
+#include "../../generated/world01_tiles.h"
+
 bool collision_check_tiles(const Entity *entity)
 {
     uint16_t left_col;

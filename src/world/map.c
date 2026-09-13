@@ -1,6 +1,9 @@
 #include "map.h"
 
-bool tile_collision[6] = {false, true, true, false, true, false};
+#include "../../generated/world01_tiles.h"
+
+
+static bool tile_collision[6] = {false, true, true, false, true, false};
 
 bool map_tile_is_solid(uint16_t col, uint16_t row)
 {
