@@ -27,12 +27,14 @@ reference material, not files to translate one-for-one.
    - Acceptance: a stable 320x180 scene responds to input on hardware or the
      emulator.
 
-3. **Core runtime and map renderer**
+3. **Core runtime and map renderer — complete**
    - Add a fixed-rate update loop and explicit game states.
    - Convert one small source map into a compact target-friendly format.
    - Render the map with a camera and solid-tile collision data.
    - Acceptance: the player can walk around the first map without leaving
      the playable area.
+   - Verified on real hardware (2026-09-13): the player is blocked at every
+     playable-area boundary, including diagonal approaches.
 
 4. **Player and interaction**
    - Port player movement, facing, animation timing, collision, attacks, and
