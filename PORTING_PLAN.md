@@ -2,10 +2,11 @@
 
 ## Current baseline
 
-The source game in `My2DGame` is a Java/Swing tile-based RPG. Its main display
-is 320x192 pixels: a 20x12 viewport of 16x16 tiles rendered at 3x scale in
-the desktop version. The RP6502 project currently builds a C program with
-cc65 and packages it as an RP6502 ROM.
+The source game in `My2DGame` is a Java/Swing tile-based RPG. The RP6502 port
+uses a 320x180 canvas with unscaled 16x16 tiles and sprites. The canvas spans
+20 tile widths and 11.25 tile heights, so tiles at the viewport edges may be
+partially visible. The project builds a C program with cc65 and packages it
+as an RP6502 ROM.
 
 The port will preserve the game loop and player-facing behavior, but it will
 replace desktop services with small target-specific systems. Java classes are
@@ -23,15 +24,17 @@ reference material, not files to translate one-for-one.
      keyboard input available on the target.
    - Draw a fixed tile-sized test scene and move a cursor with one input
      action.
-   - Acceptance: a stable 320x192 scene responds to input on hardware or the
+   - Acceptance: a stable 320x180 scene responds to input on hardware or the
      emulator.
 
-3. **Core runtime and map renderer**
+3. **Core runtime and map renderer — complete**
    - Add a fixed-rate update loop and explicit game states.
    - Convert one small source map into a compact target-friendly format.
    - Render the map with a camera and solid-tile collision data.
    - Acceptance: the player can walk around the first map without leaving
      the playable area.
+   - Verified on real hardware (2026-09-13): the player is blocked at every
+     playable-area boundary, including diagonal approaches.
 
 4. **Player and interaction**
    - Port player movement, facing, animation timing, collision, attacks, and
@@ -93,5 +96,6 @@ before choosing a tile or sprite representation.
   large generated asset file.
 - Port one visible, playable behavior at a time and keep the ROM buildable at
   every checkpoint.
-- Treat the original Java game as the behavior reference, including its
-  20x12 viewport, tile coordinate system, and state transitions.
+- Treat the original Java game as the behavior reference for its tile
+  coordinate system and state transitions, adapting the viewport to the
+  port's unscaled 320x180 canvas.

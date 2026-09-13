@@ -144,7 +144,41 @@ def convert_tile(image, x0, y0):
     return output
 
 
-def convert_tileset(image):
+def read_world_map(path):
+    rows = []
+    for line_number, line in enumerate(Path(path).read_text().splitlines(), 1):
+        if not line.strip():
+            continue
+        try:
+            row = [int(value) for value in line.split()]
+        except ValueError:
+            raise ValueError(f"Map line {line_number}: expected space-separated integers")
+        if any(value < 0 for value in row):
+            raise ValueError(f"Map line {line_number}: IDs must be nonnegative")
+        if rows and len(row) != len(rows[0]):
+            raise ValueError(f"Map line {line_number}: inconsistent row width")
+        rows.append(row)
+    if not rows:
+        raise ValueError("World map is empty")
+    return rows
+
+
+def parse_tile_mapping(value):
+    mapping = {}
+    for pair in value.split(","):
+        try:
+            map_id, source_id = [int(part.strip()) for part in pair.split("=")]
+        except ValueError:
+            raise ValueError("Mapping must use MAP_ID=PNG_INDEX pairs, e.g. 0=0,1=716")
+        if map_id < 0 or source_id < 0:
+            raise ValueError("Mapping IDs must be nonnegative")
+        if map_id in mapping:
+            raise ValueError(f"Duplicate mapping for map ID {map_id}")
+        mapping[map_id] = source_id
+    return mapping
+
+
+def convert_tileset(image, selected_sources=None):
     width, height = image.size
 
     if width % TILE_W != 0:
@@ -161,6 +195,18 @@ def convert_tileset(image):
     tiles_down = height // TILE_H
 
     output = bytearray()
+
+    if selected_sources is not None:
+        # Preserve requested order, including explicitly selected blank tiles.
+        tile_map = {}
+        for packed_index, source_index in enumerate(selected_sources):
+            if not 0 <= source_index < tiles_across * tiles_down:
+                raise ValueError(f"PNG tile index {source_index} is out of range (0..{tiles_across * tiles_down - 1})")
+            x0 = (source_index % tiles_across) * TILE_W
+            y0 = (source_index // tiles_across) * TILE_H
+            output.extend(convert_tile(image, x0, y0))
+            tile_map.setdefault(source_index, packed_index)
+        return output, tile_map, tiles_across, tiles_down
 
     # Original source tile index -> packed runtime tile index.
     #
@@ -205,7 +251,8 @@ def convert_tileset(image):
 def write_header(
     path,
     array_name,
-    packed_tile_count
+    packed_tile_count,
+    map_rows=None
 ):
     array_name = sanitize_identifier(array_name)
     prefix = make_macro(array_name)
@@ -250,6 +297,12 @@ def write_header(
             f"{array_name}[{prefix}_TOTAL_BYTES];\n"
         )
 
+        if map_rows is not None:
+            f.write(f"\n#define {prefix}_MAP_WIDTH {len(map_rows[0])}\n")
+            f.write(f"#define {prefix}_MAP_HEIGHT {len(map_rows)}\n")
+            f.write(f"#define {prefix}_MAP_TOTAL_BYTES {len(map_rows[0]) * len(map_rows)}\n")
+            f.write(f"extern const uint8_t {array_name}_map[{prefix}_MAP_TOTAL_BYTES];\n")
+
         f.write("\n#endif\n")
 
 
@@ -258,7 +311,8 @@ def write_c_file(
     header_filename,
     data,
     array_name,
-    packed_tile_count
+    packed_tile_count,
+    map_rows=None
 ):
     array_name = sanitize_identifier(array_name)
     prefix = make_macro(array_name)
@@ -302,13 +356,21 @@ def write_c_file(
 
         f.write("};\n")
 
+        if map_rows is not None:
+            f.write(f"\n/* Map cells in row-major order: index = y * {prefix}_MAP_WIDTH + x. */\n")
+            f.write(f"const uint8_t {array_name}_map[{prefix}_MAP_TOTAL_BYTES] = {{\n")
+            for row in map_rows:
+                f.write("    " + ", ".join(str(value) for value in row) + ",\n")
+            f.write("};\n")
+
 
 def write_mapping(
     path,
     source_file,
     tile_map,
     tiles_across,
-    tiles_down
+    tiles_down,
+    world_metadata=None
 ):
     packed_tile_count = sum(
         1
@@ -340,6 +402,9 @@ def write_mapping(
             for source, packed in tile_map.items()
         }
     }
+
+    if world_metadata is not None:
+        mapping.update(world_metadata)
 
     with open(path, "w") as f:
         json.dump(
@@ -378,7 +443,40 @@ def main():
         help="Generated C array name"
     )
 
+    parser.add_argument("--map", dest="world_map", help="Space-separated world map TXT file")
+    parser.add_argument("--mapping", help="Map ID to original PNG tile index, e.g. 0=0,1=716,2=320 (zero-based, left to right then top to bottom)")
     args = parser.parse_args()
+    if bool(args.world_map) != bool(args.mapping):
+        parser.error("--map and --mapping must be provided together")
+
+    rows = None
+    map_rows = None
+    selected_sources = None
+    world_metadata = None
+    try:
+        if args.world_map:
+            rows = read_world_map(args.world_map)
+            selection = parse_tile_mapping(args.mapping)
+            used_ids = sorted({value for row in rows for value in row})
+            if len(used_ids) > 256:
+                raise ValueError("Byte-indexed maps support at most 256 distinct map IDs")
+            missing = set(used_ids) - selection.keys()
+            if missing:
+                raise ValueError(f"Missing mappings for map IDs: {sorted(missing)}")
+            runtime_ids = {map_id: index for index, map_id in enumerate(used_ids)}
+            map_rows = [[runtime_ids[value] for value in row] for row in rows]
+            selected_sources = [selection[map_id] for map_id in used_ids]
+            world_metadata = {
+                "world_map": str(args.world_map),
+                "map_width": len(rows[0]),
+                "map_height": len(rows),
+                "map_id_to_source": {str(i): selection[i] for i in used_ids},
+                "map_id_to_runtime": {str(i): runtime_ids[i] for i in used_ids},
+                "packed_tile_count": len(used_ids),
+                "total_bytes": len(used_ids) * 128,
+            }
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
 
     input_path = Path(args.input)
 
@@ -391,19 +489,16 @@ def main():
         input_path
     ).convert("RGBA")
 
-    data, tile_map, across, down = convert_tileset(
-        image
-    )
+    try:
+        data, tile_map, across, down = convert_tileset(image, selected_sources)
+    except ValueError as error:
+        parser.error(str(error))
 
     image.close()
 
     total_source_tiles = across * down
 
-    packed_tile_count = sum(
-        1
-        for value in tile_map.values()
-        if value is not None
-    )
+    packed_tile_count = len(data) // 128
 
     blank_tile_count = (
         total_source_tiles - packed_tile_count
@@ -435,7 +530,8 @@ def main():
     write_header(
         h_path,
         args.name,
-        packed_tile_count
+        packed_tile_count,
+        map_rows
     )
 
     write_c_file(
@@ -443,7 +539,8 @@ def main():
         h_path.name,
         data,
         args.name,
-        packed_tile_count
+        packed_tile_count,
+        map_rows
     )
 
     write_mapping(
@@ -451,8 +548,17 @@ def main():
         input_path,
         tile_map,
         across,
-        down
+        down,
+        world_metadata
     )
+
+    if rows is not None:
+        map_path = base_path.with_suffix(".map.txt")
+        map_path.write_text("".join(
+            " ".join(str(value) for value in row) + "\n"
+            for row in map_rows
+        ))
+        print(f"Runtime map:      {map_path}")
 
     print(
         f"Source tileset:   "
@@ -470,7 +576,7 @@ def main():
     )
 
     print(
-        f"Blank tiles:      "
+        f"Omitted tiles:    "
         f"{blank_tile_count}"
     )
 
