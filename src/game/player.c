@@ -24,7 +24,7 @@ void player_init(Player *player)
     entity = &player->entity;
     entity->world_x = 368;
     entity->world_y = 336;
-    entity->speed = 2;
+    entity->speed = 1;
     entity->direction = DIR_DOWN;
     hitbox = &entity->hitbox;
     hitbox->x = 2;
@@ -54,57 +54,56 @@ void player_graphics_init(void)
         RIA.rw0 = player_sprites[i];
     }
     // LENGTH is the number of sprite configs, not a byte size.
-    xreg_vga_mode(5, 10, PLAYER_SPRITE_CONFIG, 1, 2);
-    // if (xreg_vga_mode(5, 10, PLAYER_SPRITE_CONFIG, 1, 2) < 0)
-    // {
-    //     perror("VGA sprite setup");
-    //     exit(EXIT_FAILURE);
-    // }
+    // xreg_vga_mode(5, 10, PLAYER_SPRITE_CONFIG, 1, 2);
+    if (xreg_vga_mode(5, 10, PLAYER_SPRITE_CONFIG, 1, 2) < 0)
+    {
+        perror("VGA sprite setup");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void player_update(Player *player)
 {
     Entity *entity = &player->entity;
-    int move_speed; 
     player->state = PLAYER_IDLE;
 
     
-    if (input_state.up_pressed && !input_state.right_pressed && !input_state.left_pressed)
+    if (input_state.up_pressed && !input_state.down_pressed && !input_state.left_pressed && !input_state.right_pressed)
     {
         entity->direction = DIR_UP;
         player->state = PLAYER_WALKING;
     }
-    if (input_state.down_pressed && !input_state.right_pressed && !input_state.left_pressed)
+    if (!input_state.up_pressed && input_state.down_pressed && !input_state.left_pressed && !input_state.right_pressed)
     {
         entity->direction = DIR_DOWN;
         player->state = PLAYER_WALKING;
     }
-    if (input_state.left_pressed && !input_state.up_pressed && !input_state.down_pressed)
+    if (!input_state.up_pressed && !input_state.down_pressed && input_state.left_pressed && !input_state.right_pressed)
     {
         entity->direction = DIR_LEFT;
         player->state = PLAYER_WALKING;
     }
-    if (input_state.right_pressed && !input_state.up_pressed && !input_state.down_pressed)
+    if (!input_state.up_pressed && !input_state.down_pressed && !input_state.left_pressed && input_state.right_pressed)
     {
         entity->direction = DIR_RIGHT;
         player->state = PLAYER_WALKING;
     }
-    if (input_state.up_pressed && input_state.left_pressed)
+    if (input_state.up_pressed && !input_state.down_pressed && input_state.left_pressed && !input_state.right_pressed)
     {
         entity->direction = DIR_UP_LEFT;
         player->state = PLAYER_WALKING;
     }
-    if (input_state.down_pressed && input_state.left_pressed)
+    if (!input_state.up_pressed && input_state.down_pressed && input_state.left_pressed && !input_state.right_pressed)
     {
         entity->direction = DIR_DOWN_LEFT;
         player->state = PLAYER_WALKING;
     }
-    if (input_state.up_pressed && input_state.right_pressed)
+    if (input_state.up_pressed && !input_state.down_pressed && !input_state.left_pressed && input_state.right_pressed)
     {
         entity->direction = DIR_UP_RIGHT;
         player->state = PLAYER_WALKING;
     }
-    if (input_state.down_pressed && input_state.right_pressed)
+    if (!input_state.up_pressed && input_state.down_pressed && !input_state.left_pressed && input_state.right_pressed)
     {
         entity->direction = DIR_DOWN_RIGHT;
         player->state = PLAYER_WALKING;
@@ -112,61 +111,44 @@ void player_update(Player *player)
 
     if (player->state == PLAYER_WALKING && !collision_check_tiles(entity)) {
         switch (entity->direction) {
-        
-
-
         case DIR_UP:
             entity->world_y -= entity->speed;
-            player->state = PLAYER_WALKING;
             break;
 
         case DIR_DOWN:
             entity->world_y += entity->speed;
-            player->state = PLAYER_WALKING;
             break;
 
         case DIR_LEFT:
             entity->world_x -= entity->speed;
-            player->state = PLAYER_WALKING;
             break;
 
         case DIR_RIGHT:
             entity->world_x += entity->speed;
-            player->state = PLAYER_WALKING;
             break;
 
         case DIR_UP_LEFT:
-            move_speed = (entity->speed + entity->speed + entity->speed) >> 2;
-            entity->world_x -= move_speed;
-            entity->world_y -= move_speed;
-            player->state = PLAYER_WALKING;
+            entity->world_x -= entity->speed;
+            entity->world_y -= entity->speed;
             break;
 
         case DIR_DOWN_LEFT:
-            move_speed = (entity->speed + entity->speed + entity->speed) >> 2;
-            entity->world_x -= move_speed;
-            entity->world_y += move_speed;
-            player->state = PLAYER_WALKING;
+            entity->world_x -= entity->speed;
+            entity->world_y += entity->speed;
             break;
 
         case DIR_UP_RIGHT:
-            move_speed = (entity->speed + entity->speed + entity->speed) >> 2;
-            entity->world_x += move_speed;
-            entity->world_y -= move_speed;
-            player->state = PLAYER_WALKING;
+            entity->world_x += entity->speed;
+            entity->world_y -= entity->speed;
             break;
 
         case DIR_DOWN_RIGHT:
-            move_speed = (entity->speed + entity->speed + entity->speed) >> 2;
-            entity->world_x += move_speed;
-            entity->world_y += move_speed;
-            player->state = PLAYER_WALKING;
+            entity->world_x += entity->speed;
+            entity->world_y += entity->speed;
             break;
         } 
-
-    } else {
-        player->state = PLAYER_IDLE;
     }
+    
     player_animation_update(player);
 }
 

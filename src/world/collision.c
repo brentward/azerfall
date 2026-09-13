@@ -10,7 +10,6 @@ bool collision_check_tiles(const Entity *entity)
     uint16_t right_col;
     uint16_t top_row;
     uint16_t bottom_row;
-    int move_speed;
 
     int16_t left = entity->world_x + entity->hitbox.x;
 
@@ -39,27 +38,24 @@ bool collision_check_tiles(const Entity *entity)
         break;
 
     case DIR_UP_LEFT:
-        move_speed = (entity->speed + entity->speed + entity->speed) >> 2;
-        left -= move_speed;
-        top -= move_speed;
+        /* Match the unscaled diagonal step in player_update(). */
+        left -= entity->speed;
+        top -= entity->speed;
         break;
 
     case DIR_DOWN_LEFT:
-        move_speed = (entity->speed + entity->speed + entity->speed) >> 2;
-        left -= move_speed;
-        bottom += move_speed;
+        left -= entity->speed;
+        bottom += entity->speed;
         break;
 
     case DIR_UP_RIGHT:
-        move_speed = (entity->speed + entity->speed + entity->speed) >> 2;
-        right += move_speed;
-        top -= move_speed;
+        right += entity->speed;
+        top -= entity->speed;
         break;
 
     case DIR_DOWN_RIGHT:
-        move_speed = (entity->speed + entity->speed + entity->speed) >> 2;
-        right += move_speed;
-        bottom += move_speed;
+        right += entity->speed;
+        bottom += entity->speed;
         break;
 
     }

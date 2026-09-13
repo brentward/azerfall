@@ -119,12 +119,12 @@ static void background_init(void)
 {
     unsigned char frame;
 
-    xreg_vga_canvas(2);
-    // if (xreg_vga_canvas(2) < 0)
-    // {
-    //     perror("VGA canvas setup");
-    //     exit(EXIT_FAILURE);
-    // }
+    // xreg_vga_canvas(2);
+    if (xreg_vga_canvas(2) < 0)
+    {
+        perror("VGA canvas setup");
+        exit(EXIT_FAILURE);
+    }
 
     /* Timing diagnostic: wait for the next VSYNC before the first upload. */
     frame = RIA.vsync;
@@ -133,12 +133,12 @@ static void background_init(void)
     }
     background_upload();
 
-    xreg_vga_mode(2, 10, BACKGROUND_CONFIG, 2);
-    // if (xreg_vga_mode(2, 10, BACKGROUND_CONFIG, 2) < 0)
-    // {
-    //     perror("VGA background setup");
-    //     exit(EXIT_FAILURE);
-    // }
+    // xreg_vga_mode(2, 10, BACKGROUND_CONFIG, 2);
+    if (xreg_vga_mode(2, 10, BACKGROUND_CONFIG, 2) < 0)
+    {
+        perror("VGA background setup");
+        exit(EXIT_FAILURE);
+    }
 }
 
 /* Shared with the R-key diagnostic; only writes XRAM, never VGA registers. */

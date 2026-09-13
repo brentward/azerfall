@@ -89,14 +89,11 @@ void input_update(void)
 
     if (!(keystates[0] & 1)) // any key pressed?
     {
-        if (key(KEY_W) && !key(KEY_S))
-            input_state.up_pressed = true;
-        if (key(KEY_S) && !key(KEY_W))
-            input_state.down_pressed = true;
-        if (key(KEY_A) && !key(KEY_D))
-            input_state.left_pressed = true;
-        if (key(KEY_D) && !key(KEY_A))
-            input_state.right_pressed = true;
+        
+        input_state.up_pressed = ((key(KEY_W) || key(KEY_UP)) != 0);
+        input_state.down_pressed = ((key(KEY_S) || key(KEY_DOWN)) != 0);
+        input_state.left_pressed = ((key(KEY_A) || key(KEY_LEFT)) != 0);
+        input_state.right_pressed = ((key(KEY_D) || key(KEY_RIGHT)) != 0);
         pause_down = pause_down || (key(KEY_P) != 0);
         reload_down = key(KEY_R) != 0;
     }
