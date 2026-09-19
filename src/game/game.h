@@ -11,16 +11,13 @@
 #define MAX_SCREEN_COL       20
 #define MAX_SCREEN_ROW       12  
 
-#define BACKGROUND_TILES 0x1000
-#define BACKGROUND_CONFIG 0xFF00
-#define BACKGROUND_DATA  0x0000
-#define BACKGROUND_PALETTE 0xFFFF
-
 // World Settings
 #define WORLD_WIDTH_TILES  50
 #define WORLD_HEIGHT_TILES 50
 
 #define BYTES_PER_SPRITE 128
+
+#define OBJECT_COUNT 7
 
 typedef enum {
     GAME_STATE_TITLE_SCREEN,

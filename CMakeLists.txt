@@ -9,11 +9,14 @@ rp6502_asset(azerfall help src/help.txt)
 rp6502_executable(azerfall DATA default RESET default)
 target_sources(azerfall PRIVATE
     src/main.c
-    generated/world01_tiles.c
+    generated/world_tiles.c
+    generated/world_tiles_worldmap_map.c
     src/game/game.c
     generated/player_sprites.c
     src/game/player.c
     src/input/input.c
     src/world/collision.c
     src/world/map.c
+    src/object/object.c
+    generated/object_sprites.c
 )

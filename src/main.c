@@ -9,9 +9,9 @@ int main(void)
 {
     unsigned char frame;
 
-    puts("AZERFALL RP6502 PORT");
-    puts("Video and input test");
-    puts("next milestone: core runtime and map renderer");
+    puts("AZERFALL RP6502");
+    puts("Test: Player and interaction");
+    puts("Next milestone: World entities and progression");
 
     game_init();
 

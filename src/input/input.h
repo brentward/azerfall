@@ -3,12 +3,6 @@
 
 #include <stdbool.h>
 
-// GAMEPAD
-#define GAMEPAD_INPUT 0xFF80U // 40 bytes of gamepad data
-
-// USB KEYBOARD
-#define KEYBOARD_INPUT 0xFF10U // KEYBOARD_BYTES (32 bytes, 256 bits) of key press bitmask data
-
 typedef struct
 {
     bool up_pressed;

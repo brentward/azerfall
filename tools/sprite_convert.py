@@ -3,6 +3,39 @@ from pathlib import Path
 import argparse
 import json
 import re
+from tileset_convert import custom_palette, explicit_palette
+
+
+def prepare_palette(image, transparent_rgb=None, shared_path=None, palette_path=None):
+    """Build exact pixel mappings; shared palettes never use nearest-color matching."""
+    rgba = image.convert("RGBA")
+    if transparent_rgb is not None:
+        rgba.putdata([(0, 0, 0, 0) if is_transparent(p, transparent_rgb) else p
+                      for p in rgba.getdata()])
+        image = rgba
+    indexed, words = (explicit_palette(image, palette_path) if palette_path
+                      else custom_palette(image))
+    colors = list(rgba.getdata())
+    if shared_path is None:
+        return dict(zip(colors, indexed.getdata())), words
+    manifest = json.loads(Path(shared_path).read_text())
+    words = manifest.get("palette")
+    if (manifest.get("palette_format") != "RP6502 RGB555, alpha bit 5"
+            or not isinstance(words, list) or len(words) != 16
+            or any(type(w) is not int or not 0 <= w <= 65535 for w in words)):
+        raise ValueError("Shared palette must contain 16 RP6502 RGB555 words in a generated JSON manifest")
+    lookup = {}
+    for color in set(colors):
+        r, g, b, a = color
+        if list(color[:3]) == manifest.get("transparent_rgb"):
+            a = 0
+        word = ((b >> 3) << 11) | ((g >> 3) << 6) | (r >> 3) | (0x20 if a >= 128 else 0)
+        matches = [i for i, candidate in enumerate(words)
+                   if candidate == word or (a < 128 and not candidate & 0x20)]
+        if not matches:
+            raise ValueError(f"Sprite color {color} is absent from the shared palette; update the artwork or use --custom-palette")
+        lookup[color] = matches[0]
+    return lookup, words
 
 
 SPRITE_W = 16
@@ -150,7 +183,11 @@ def is_transparent(pixel, transparent_rgb):
     return False
 
 
-def convert_pixel(pixel, transparent_rgb):
+def convert_pixel(pixel, transparent_rgb, palette_lookup=None):
+    if palette_lookup is not None:
+        if transparent_rgb is not None and is_transparent(pixel, transparent_rgb):
+            pixel = (0, 0, 0, 0)
+        return palette_lookup[pixel]
     if is_transparent(pixel, transparent_rgb):
         return 0
 
@@ -197,7 +234,8 @@ def convert_sprite(
     image,
     x0,
     y0,
-    transparent_rgb
+    transparent_rgb,
+    palette_lookup=None
 ):
     """
     Convert one 16x16 cell to packed 4-bpp.
@@ -214,14 +252,14 @@ def convert_sprite(
                 image.getpixel(
                     (x0 + x, y0 + y)
                 ),
-                transparent_rgb
+                transparent_rgb, palette_lookup
             )
 
             p2 = convert_pixel(
                 image.getpixel(
                     (x0 + x + 1, y0 + y)
                 ),
-                transparent_rgb
+                transparent_rgb, palette_lookup
             )
 
             output.append(
@@ -235,7 +273,8 @@ def extract_sprites(
     image,
     region,
     transparent_rgb,
-    skip_blank
+    skip_blank,
+    palette_lookup=None
 ):
     if region is None:
         region_x = 0
@@ -296,7 +335,7 @@ def extract_sprites(
                 image,
                 x0,
                 y0,
-                transparent_rgb
+                transparent_rgb, palette_lookup
             )
 
             index = len(sprites)
@@ -330,6 +369,8 @@ def make_sprite_name(sprite, prefix):
         player_walk_dir0_frame1
         player_walk_dir1_frame0
     """
+    if sprite.get("layout") == "objects":
+        return f"{prefix}_image{sprite['source_cell']}"
     return (
         f"{prefix}_dir{sprite['row']}"
         f"_frame{sprite['column']}"
@@ -415,10 +456,9 @@ def write_c_file(
     prefix = make_macro(array_name)
 
     sprite_offsets = {
-        sprite["offset"]: make_sprite_name(
-            sprite,
-            sprite_prefix
-        )
+        sprite["offset"]: (f"image {sprite['index']} (source cell {sprite['source_cell']})"
+                           if sprite.get("layout") == "objects"
+                           else make_sprite_name(sprite, sprite_prefix))
         for sprite in sprites
     }
 
@@ -578,7 +618,32 @@ def main():
         help="Do not output completely blank cells"
     )
 
+    palette_args = parser.add_mutually_exclusive_group()
+    palette_args.add_argument("--custom-palette", action="store_true",
+                              help="Generate a custom 16-color palette instead of ANSI")
+    palette_args.add_argument("--shared-palette", metavar="JSON",
+                              help="Use palette indexes from a generated tileset/sprite JSON; emit no palette array")
+    palette_args.add_argument("--palette", help="Generate a palette from ordered GIMP colors, with index 0 transparent black")
+    parser.add_argument("--layout", choices=("animation", "objects"), default="animation",
+                        help="Animation: direction rows/frame columns; objects: image indexes and skip blanks")
+    parser.add_argument("--frames", type=int, help="Export the first N frame columns per direction row")
+    parser.add_argument("--keep-blank", action="store_true", help="Keep blank cells in object mode")
     args = parser.parse_args()
+    if args.skip_blank and args.keep_blank:
+        parser.error("--skip-blank and --keep-blank are mutually exclusive")
+    if args.frames is not None and (args.layout != "animation" or args.frames < 1):
+        parser.error("--frames requires animation layout and a positive count")
+    args.skip_blank = args.skip_blank or (args.layout == "objects" and not args.keep_blank)
+    if args.transparent is None:
+        if args.palette:
+            args.transparent = (0, 0, 0)
+        elif args.shared_palette:
+            try:
+                key = json.loads(Path(args.shared_palette).read_text()).get("transparent_rgb")
+                if key is not None:
+                    args.transparent = tuple(key)
+            except (ValueError, OSError) as error:
+                parser.error(str(error))
 
     input_path = Path(args.input)
 
@@ -587,9 +652,22 @@ def main():
             f"Input does not exist: {input_path}"
         )
 
-    image = Image.open(
-        input_path
-    ).convert("RGBA")
+    with Image.open(input_path) as png:
+        image = png.convert("RGBA")
+        palette_lookup = None
+        palette_words = None
+        if args.custom_palette or args.shared_palette or args.palette:
+            try:
+                palette_image = png
+                if args.region:
+                    x, y, w, h = args.region
+                    if x + w > png.width or y + h > png.height:
+                        raise ValueError("Region extends beyond image bounds")
+                    palette_image = png.crop((x, y, x + w, y + h))
+                palette_lookup, palette_words = prepare_palette(
+                    palette_image, args.transparent, args.shared_palette, args.palette)
+            except (ValueError, OSError) as error:
+                parser.error(str(error))
 
     print(
         f"Source image:      "
@@ -620,10 +698,24 @@ def main():
         image,
         args.region,
         args.transparent,
-        args.skip_blank
+        args.skip_blank,
+        palette_lookup
     )
 
     image.close()
+
+    if args.frames is not None:
+        if args.frames > columns:
+            parser.error("--frames cannot exceed the sheet's column count")
+        selected = [s for s in sprites if s["column"] < args.frames]
+        data = bytearray().join(data[s["offset"]:s["offset"] + s["bytes"]] for s in selected)
+        sprites = selected
+    if not sprites:
+        parser.error("No sprites remain after filtering")
+    for index, sprite in enumerate(sprites):
+        sprite["index"] = index
+        sprite["offset"] = index * 128
+        sprite["layout"] = args.layout
 
     base_path = Path(args.output)
 
@@ -665,6 +757,41 @@ def main():
         rows,
         args.prefix
     )
+
+    manifest = json.loads(json_path.read_text())
+    manifest["layout"] = args.layout
+    manifest["skip_blank"] = args.skip_blank
+    if args.layout == "animation":
+        manifest["frames_per_direction"] = args.frames or columns
+        manifest["directions"] = rows
+        prefix = make_macro(args.name)
+        declarations = (f"#define {prefix}_FRAMES_PER_DIRECTION {args.frames or columns}\n"
+                        f"#define {prefix}_DIRECTIONS {rows}\n\n")
+        h_path.write_text(h_path.read_text().replace("#endif", declarations + "#endif"))
+    json_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    if palette_words is not None:
+        manifest = json.loads(json_path.read_text())
+        manifest["palette"] = palette_words
+        manifest["palette_format"] = "RP6502 RGB555, alpha bit 5"
+        manifest["shared_palette"] = args.shared_palette
+        if args.palette:
+            manifest["palette_source"] = args.palette
+            manifest["transparent_rgb"] = [0, 0, 0]
+        elif args.shared_palette:
+            shared = json.loads(Path(args.shared_palette).read_text())
+            manifest["transparent_rgb"] = shared.get("transparent_rgb")
+        json_path.write_text(json.dumps(manifest, indent=2) + "\n")
+        if args.custom_palette or args.palette:
+            name = sanitize_identifier(args.name)
+            prefix = make_macro(name)
+            declarations = (f"#define {prefix}_PALETTE_COUNT 16\n"
+                            f"#define {prefix}_PALETTE_BYTES ({prefix}_PALETTE_COUNT * 2)\n"
+                            f"extern const uint16_t {name}_palette[{prefix}_PALETTE_COUNT];\n\n")
+            h_path.write_text(h_path.read_text().replace("#endif", declarations + "#endif"))
+            with c_path.open("a") as output:
+                output.write(f"\nconst uint16_t {name}_palette[{prefix}_PALETTE_COUNT] = {{\n    ")
+                output.write(", ".join(f"0x{word:04X}" for word in palette_words))
+                output.write("\n};\n")
 
     print()
     print(

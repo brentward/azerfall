@@ -414,6 +414,207 @@ def write_mapping(
         )
 
 
+def read_tile_data(path):
+    """Read alternating numeric PNG filenames and collision booleans."""
+    lines = Path(path).read_text(encoding="utf-8-sig").splitlines()
+    if not lines or len(lines) % 2:
+        raise ValueError("Tile data must contain filename/boolean line pairs")
+    entries = {}
+    for offset in range(0, len(lines), 2):
+        filename, solid = [line.strip() for line in lines[offset:offset + 2]]
+        if not re.fullmatch(r"[0-9]+(?:\.png)?", filename):
+            raise ValueError(f"Tile data line {offset + 1}: expected a numeric PNG filename")
+        index = int(Path(filename).stem)
+        if index in entries:
+            raise ValueError(f"Duplicate tile ID {index}")
+        if solid.lower() not in ("true", "false"):
+            raise ValueError(f"Tile data line {offset + 2}: expected true or false")
+        entries[index] = (filename, solid.lower() == "true")
+    if len(entries) > 256 or sorted(entries) != list(range(len(entries))):
+        raise ValueError("Tile IDs must be contiguous from 0, with at most 256 tiles")
+    return [entries[index] for index in range(len(entries))]
+
+
+def read_gimp_palette(path):
+    lines = Path(path).read_text(encoding="utf-8-sig").splitlines()
+    if not lines or lines[0].strip() != "GIMP Palette":
+        raise ValueError("Expected a GIMP Palette (.gpl) file")
+    colors = []
+    for line in lines[1:]:
+        line = line.strip()
+        if not line or line.startswith(("#", "Name:", "Columns:")):
+            continue
+        parts = line.split()
+        if len(parts) < 3:
+            raise ValueError("Invalid GIMP palette color")
+        color = tuple(int(part) for part in parts[:3])
+        if any(v < 0 or v > 255 for v in color):
+            raise ValueError("Palette channels must be in 0..255")
+        colors.append(color)
+    if len(colors) != 16:
+        raise ValueError(f"WARNING: expected 16 palette entries, got {len(colors)}")
+    if colors[0] != (0, 0, 0):
+        raise ValueError("Palette index 0 must be black (reserved for transparency)")
+    return colors
+
+
+def explicit_palette(image, path):
+    colors = read_gimp_palette(path)
+    words = [((b >> 3) << 11) | ((g >> 3) << 6) | (r >> 3)
+             | (0x20 if i else 0) for i, (r, g, b) in enumerate(colors)]
+    lookup = {color: i for i, color in reversed(list(enumerate(colors)))}
+    pixels = []
+    for r, g, b, a in image.convert("RGBA").getdata():
+        if a < 128:
+            pixels.append(0)
+        elif (r, g, b) in lookup:
+            pixels.append(lookup[(r, g, b)])
+        else:
+            raise ValueError(f"Color {(r, g, b)} is absent from the supplied palette")
+    indexed = Image.new("L", image.size)
+    indexed.putdata(pixels)
+    return indexed, words
+
+
+def custom_palette(image):
+    """Return indexed pixels and 16 RP6502 RGB555/alpha palette words.
+
+    Preserve PNG indices when they fit; RGBA exports use first-seen colors.
+    See https://picocomputer.github.io/vga.html for the hardware format.
+    """
+    rgba = image.convert("RGBA")
+    colors = list(dict.fromkeys(rgba.getdata()))
+    if len(colors) > 16:
+        raise ValueError(f"WARNING: image uses {len(colors)} colors; 4-bpp supports at most 16. Reduce the palette and export again.")
+    if image.mode == "P" and max(image.getdata()) < 16:
+        indexed = image.copy()
+        palette = [(0, 0, 0, 0)] * 16
+        for index, color in zip(image.getdata(), rgba.getdata()):
+            palette[index] = color
+    else:
+        palette = colors + [(0, 0, 0, 0)] * (16 - len(colors))
+        lookup = {color: index for index, color in enumerate(colors)}
+        indexed = Image.new("L", image.size)
+        indexed.putdata([lookup[color] for color in rgba.getdata()])
+    if any(a not in (0, 255) for _, _, _, a in colors):
+        import warnings
+        warnings.warn("Partial alpha uses a binary threshold of 128 on RP6502")
+    words = [((b >> 3) << 11) | ((g >> 3) << 6) | (r >> 3)
+             | (0x20 if a >= 128 else 0) for r, g, b, a in palette]
+    return indexed, words
+
+
+def convert_directory(args):
+    if not args.tile_data or args.mapping:
+        raise ValueError("Directory input requires --tile-data and does not use --mapping")
+    entries = read_tile_data(args.tile_data)
+    data = bytearray()
+    palette = None
+    sheet = not Path(args.input).is_dir()
+    if sheet:
+        with Image.open(args.input) as png:
+            width, height = png.size
+            if width % TILE_W or height % TILE_H:
+                raise ValueError("Sheet dimensions must be multiples of 16")
+            if len(entries) > (width // TILE_W) * (height // TILE_H):
+                raise ValueError("Tile data refers to indexes outside the sheet")
+            indexed, palette = (explicit_palette(png, args.palette) if args.palette
+                                else custom_palette(png))
+            for index in range(len(entries)):
+                x0 = (index % (width // TILE_W)) * TILE_W
+                y0 = (index // (width // TILE_W)) * TILE_H
+                for y in range(TILE_H):
+                    for x in range(0, TILE_W, 2):
+                        data.append(pack_4bpp(indexed.getpixel((x0 + x, y0 + y)),
+                                             indexed.getpixel((x0 + x + 1, y0 + y))))
+    else:
+        for filename, _ in entries:
+            with Image.open(Path(args.input) / filename) as png:
+                if png.size != (TILE_W, TILE_H):
+                    raise ValueError(f"{filename}: expected {TILE_W}x{TILE_H}, got {png.size}")
+                data.extend(convert_tile(png.convert("RGBA"), 0, 0))
+
+    base = Path(args.output).with_suffix("")
+    name = sanitize_identifier(args.name)
+    prefix = make_macro(name)
+    maps = []
+    stems = set()
+    for path in args.world_map or []:
+        stem = sanitize_identifier(Path(path).stem)
+        if stem.upper() in stems:
+            raise ValueError(f"Map output name collision: {path}")
+        stems.add(stem.upper())
+        rows = read_world_map(path)
+        missing = {value for row in rows for value in row if value >= len(entries)}
+        if missing:
+            raise ValueError(f"{path}: undefined tile IDs {sorted(missing)}")
+        maps.append((path, stem, rows))
+
+    # Validate every input before writing outputs. All maps retain source IDs.
+    base.parent.mkdir(parents=True, exist_ok=True)
+    header = base.with_suffix(".h")
+    source = base.with_suffix(".c")
+    write_header(header, name, len(entries))
+    declaration = f"extern const uint8_t {name}_collision[{prefix}_TILE_COUNT];\n\n"
+    if palette is not None:
+        declaration += (f"#define {prefix}_PALETTE_COUNT 16\n"
+                        f"#define {prefix}_PALETTE_BYTES ({prefix}_PALETTE_COUNT * 2)\n"
+                        f"extern const uint16_t {name}_palette[{prefix}_PALETTE_COUNT];\n\n")
+    header.write_text(header.read_text().replace("#endif", declaration + "#endif"))
+    write_c_file(source, header.name, data, name, len(entries))
+    with source.open("a") as output:
+        if palette is not None:
+            output.write(f"\nconst uint16_t {name}_palette[{prefix}_PALETTE_COUNT] = {{\n    ")
+            output.write(", ".join(f"0x{word:04X}" for word in palette))
+            output.write("\n};\n")
+        output.write(f"\nconst uint8_t {name}_collision[{prefix}_TILE_COUNT] = {{\n    ")
+        output.write(", ".join(str(int(solid)) for _, solid in entries))
+        output.write("\n};\n")
+    metadata = {
+        "source": str(args.input), "tile_data": str(args.tile_data),
+        "bpp": 4, "tile_width": TILE_W, "tile_height": TILE_H,
+        "bytes_per_tile": 128, "packed_tile_count": len(entries),
+        "total_bytes": len(data),
+        "tiles": {str(i): {"filename": filename, "runtime_id": i, "collision": solid}
+                  for i, (filename, solid) in enumerate(entries)},
+        "maps": [],
+    }
+    if sheet:
+        metadata["palette"] = palette
+        metadata["palette_format"] = "RP6502 RGB555, alpha bit 5"
+        if args.palette:
+            metadata["palette_source"] = str(args.palette)
+            metadata["transparent_rgb"] = [0, 0, 0]
+        metadata["source_columns"] = width // TILE_W
+        metadata["source_rows"] = height // TILE_H
+        for index, tile in enumerate(metadata["tiles"].values()):
+            tile.pop("filename")
+            tile["source_index"] = index
+    for path, stem, rows in maps:
+        map_base = base.parent / f"{base.name}_{stem}_map"
+        map_name = f"{name}_{stem}_map"
+        macro = make_macro(map_name)
+        width, height = len(rows[0]), len(rows)
+        map_base.with_suffix(".h").write_text(
+            f"#ifndef {macro}_H\n#define {macro}_H\n\n"
+            f'#include "{header.name}"\n\n'
+            f"#define {macro}_WIDTH {width}\n#define {macro}_HEIGHT {height}\n"
+            f"#define {macro}_TOTAL_BYTES {width * height}\n"
+            f"#define {macro}_TOTAL_X ({macro}_WIDTH * {prefix}_TILE_WIDTH)\n"
+            f"#define {macro}_TOTAL_Y ({macro}_HEIGHT * {prefix}_TILE_HEIGHT)\n"
+            f"extern const uint8_t {map_name}[{macro}_TOTAL_BYTES];\n\n#endif\n")
+        map_base.with_suffix(".c").write_text(
+            f'#include "{map_base.name}.h"\n\n'
+            f"const uint8_t {map_name}[{macro}_TOTAL_BYTES] = {{\n" +
+            "".join("    " + ", ".join(map(str, row)) + ",\n" for row in rows) + "};\n")
+        map_base.with_suffix(".txt").write_text(
+            "".join(" ".join(map(str, row)) + "\n" for row in rows))
+        metadata["maps"].append({"source": str(path), "array": map_name,
+                                 "width": width, "height": height})
+    base.with_suffix(".json").write_text(json.dumps(metadata, indent=2) + "\n")
+    print(f"Generated {len(entries)} shared tiles ({len(data)} bytes), collision flags, and {len(maps)} maps in {base.parent}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description=(
@@ -424,7 +625,7 @@ def main():
 
     parser.add_argument(
         "input",
-        help="Input PNG tileset"
+        help="Input PNG tileset or directory of numbered 16x16 PNG tiles"
     )
 
     parser.add_argument(
@@ -443,9 +644,24 @@ def main():
         help="Generated C array name"
     )
 
-    parser.add_argument("--map", dest="world_map", help="Space-separated world map TXT file")
+    parser.add_argument("--map", dest="world_map", action="append", help="Space-separated map TXT file; repeat for multiple maps with directory input")
+    parser.add_argument("--tile-data", help="Alternating tile index/collision boolean TXT file; numeric PNG names also accepted")
     parser.add_argument("--mapping", help="Map ID to original PNG tile index, e.g. 0=0,1=716,2=320 (zero-based, left to right then top to bottom)")
+    parser.add_argument("--palette", help="GIMP palette: 16 ordered colors, index 0 transparent black; requires sheet and --tile-data")
     args = parser.parse_args()
+    if args.palette and (not args.tile_data or Path(args.input).is_dir()):
+        parser.error("--palette requires PNG sheet input with --tile-data")
+    if Path(args.input).is_dir() or args.tile_data:
+        try:
+            convert_directory(args)
+        except (ValueError, OSError) as error:
+            parser.error(str(error))
+        return
+    if args.tile_data:
+        parser.error("--tile-data requires directory input")
+    if args.world_map and len(args.world_map) > 1:
+        parser.error("Multiple maps require directory input")
+    args.world_map = args.world_map[0] if args.world_map else None
     if bool(args.world_map) != bool(args.mapping):
         parser.error("--map and --mapping must be provided together")
 

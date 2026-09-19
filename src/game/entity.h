@@ -28,6 +28,11 @@ typedef struct {
     uint8_t speed;
     Direction direction;
 
+    uint8_t animation_frame;
+    uint8_t animation_timer;
+    uint16_t xram_sprite_ptr;
+
+
     HitBox hitbox;
 } Entity;
 

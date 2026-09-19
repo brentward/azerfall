@@ -4,6 +4,7 @@
 
 #include <rp6502.h>
 
+#include "../xram_layout.h"
 #include "../input/usb_hid_keys.h"
 
 #define KEYBOARD_BYTES 32
@@ -26,17 +27,17 @@ void input_init(void)
     reload_was_down = false;
 
     // Start with no input before enabling live updates from the RIA.
-    RIA.addr0 = KEYBOARD_INPUT;
+    RIA.addr0 = XRAM_KEYBOARD;
     RIA.step0 = 1;
     for (i = 0; i < KEYBOARD_BYTES; i++)
         RIA.rw0 = (i == 0) ? 1 : 0;
 
-    RIA.addr0 = GAMEPAD_INPUT;
+    RIA.addr0 = XRAM_GAMEPAD;
     for (i = 0; i < 40; i++)
         RIA.rw0 = 0;
 
-    xreg_ria_keyboard(KEYBOARD_INPUT);
-    xreg_ria_gamepad(GAMEPAD_INPUT);
+    xreg_ria_keyboard(XRAM_KEYBOARD);
+    xreg_ria_gamepad(XRAM_GAMEPAD);
 }
 
 #define GAMEPAD_SIZE 10         // bytes per gamepad in XRAM
@@ -60,12 +61,12 @@ void input_update(void)
     input_state.right_pressed = false;
     input_state.pause_pressed = false;
 
-    RIA.addr1 = KEYBOARD_INPUT;
+    RIA.addr1 = XRAM_KEYBOARD;
     RIA.step1 = 1;
     for (i = 0; i < KEYBOARD_BYTES; i++)
         keystates[i] = RIA.rw1;
 
-    RIA.addr1 = GAMEPAD_INPUT;
+    RIA.addr1 = XRAM_GAMEPAD;
     // byte 0 = dpad, byte 1 = sticks: merge for direction
     dpad = RIA.rw1;
     sticks = RIA.rw1;
@@ -83,7 +84,7 @@ void input_update(void)
     //     Input.shoot = true;
 
     // Read BTN1 directly: the commented-out BTN0 read does not advance RIA.
-    RIA.addr1 = GAMEPAD_INPUT + 3;
+    RIA.addr1 = XRAM_GAMEPAD + 3;
     buttons = RIA.rw1;
     pause_down = (dpad & GAMEPAD_CONNECTED) && (buttons & GAMEPAD_BTN_START);
 

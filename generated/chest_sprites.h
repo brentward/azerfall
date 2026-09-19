@@ -1,0 +1,18 @@
+#ifndef CHEST_SPRITES_H
+#define CHEST_SPRITES_H
+
+#include <stdint.h>
+
+#define CHEST_SPRITES_WIDTH 16
+#define CHEST_SPRITES_HEIGHT 16
+#define CHEST_SPRITES_BPP 4
+#define CHEST_SPRITES_BYTES_PER_SPRITE 128
+#define CHEST_SPRITES_COUNT 2
+#define CHEST_SPRITES_TOTAL_BYTES 256
+
+#define CHEST_DIR0_FRAME0 0
+#define CHEST_DIR0_FRAME1 1
+
+extern const uint8_t chest_sprites[CHEST_SPRITES_TOTAL_BYTES];
+
+#endif

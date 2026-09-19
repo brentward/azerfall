@@ -5,8 +5,9 @@
 
 #include "entity.h"
 #include "game.h"
+#include "../object/object.h"
 
-#define PLAYER_SPRITE_CONFIG 0xFF40U // Keep clear of keyboard data at 0xFF10-0xFF2F.
+#define PLAYER_SPRITE_SLOT 0U
 #define PLAYER_PALETTE 0xFFFF
 #define PLAYER_SCREEN_X SCREEN_WIDTH / 2 - HALF_TILE_SIZE
 #define PLAYER_SCREEN_Y SCREEN_HEIGHT / 2 - HALF_TILE_SIZE
@@ -20,18 +21,18 @@ typedef enum {
 } PlayerState;
 
 
-typedef struct {
+typedef struct Player {
     Entity entity;
     PlayerState state;
 
-    uint8_t animation_frame;
-    uint8_t animation_timer;
-    uint16_t sprite_xram_addr;
+    int16_t screen_org_x;
+    int16_t screen_org_y;
+
 } Player;
 
 void player_init(Player *player);
 void player_graphics_init(void);
-void player_update(Player *player);
+void player_update(Player *player, GameObject objects[OBJECT_COUNT]);
 void player_draw(Player *player);
 
 #endif // PLAYER_H

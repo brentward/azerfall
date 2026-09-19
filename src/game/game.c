@@ -6,16 +6,20 @@
 
 #include <rp6502.h>
 
+#include "../xram_layout.h"
 #include "player.h"
+#include "../object/object.h"
 #include "../input/input.h"
-#include "../../generated/world01_tiles.h"
-
 
 static Player player;
 static Game game;
+static GameObject objects[OBJECT_COUNT];
+// static vga_mode5_sprite_t sprite_configs[8];
+
 static void background_upload(void);
 static void background_init(void);
 static void background_draw(void);
+static void set_objects(void);
 
 // /* Startup diagnostic: this reads the RIA's XRAM, not the VGA's replica. */
 // static void verify_background_bytes(const char *label, unsigned address,
@@ -64,6 +68,7 @@ static void background_draw(void);
 
 void game_update(void)
 {
+    int i;
     input_update();
     if (input_state.background_reload_pressed)
     {
@@ -87,20 +92,29 @@ void game_update(void)
 
     if (game.state == GAME_STATE_PLAY)
     {
-        player_update(&player);
+        player_update(&player, objects);
+        for (i = 0; i < OBJECT_COUNT; i++)
+        {
+            object_prepare_draw(&objects[i], &player);
+        }
     }
 }
 
 void draw(void)
 {
+    int i;
     background_draw();
     player_draw(&player);
+    for (i = 0; i < OBJECT_COUNT; i++)
+    {
+        object_draw(&objects[i], i + 1);
+    }
 }
 
-void background_draw(void)
+static void background_draw(void)
 {
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, x_pos_px, PLAYER_SCREEN_X - player.entity.world_x);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, y_pos_px, PLAYER_SCREEN_Y - player.entity.world_y);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, x_pos_px, PLAYER_SCREEN_X - player.entity.world_x);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, y_pos_px, PLAYER_SCREEN_Y - player.entity.world_y);
 }
 
 void game_init(void)
@@ -108,7 +122,9 @@ void game_init(void)
     memset(&game, 0, sizeof game);
     game.state = GAME_STATE_PLAY;
     player_init(&player);
+    object_sprite_init();
     background_init();
+    set_objects();
     player_graphics_init();
     input_init();
     // /* Check after all uploads so later initialization overwrites are caught. */
@@ -133,8 +149,8 @@ static void background_init(void)
     }
     background_upload();
 
-    // xreg_vga_mode(2, 10, BACKGROUND_CONFIG, 2);
-    if (xreg_vga_mode(2, 10, BACKGROUND_CONFIG, 2) < 0)
+    // xreg_vga_mode(2, 10, XRAM_BG_CONFIG, 2);
+    if (xreg_vga_mode(2, 10, XRAM_BG_CONFIG, 2) < 0)
     {
         perror("VGA background setup");
         exit(EXIT_FAILURE);
@@ -146,28 +162,46 @@ static void background_upload(void)
 {
     int i;
 
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, x_wrap, false);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, y_wrap, false);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, x_pos_px, PLAYER_SCREEN_X - player.entity.world_x);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, y_pos_px, PLAYER_SCREEN_Y - player.entity.world_y);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, width_tiles, WORLD01_TILES_MAP_WIDTH);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, height_tiles, WORLD01_TILES_MAP_HEIGHT);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, xram_data_ptr, BACKGROUND_DATA);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, xram_palette_ptr, BACKGROUND_PALETTE);
-    xram0_struct_set(BACKGROUND_CONFIG, vga_mode2_config_t, xram_tile_ptr, BACKGROUND_TILES);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, x_wrap, false);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, y_wrap, false);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, x_pos_px, PLAYER_SCREEN_X - player.entity.world_x);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, y_pos_px, PLAYER_SCREEN_Y - player.entity.world_y);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, width_tiles, WORLD_TILES_WORLDMAP_MAP_WIDTH);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, height_tiles, WORLD_TILES_WORLDMAP_MAP_HEIGHT);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, xram_data_ptr, XRAM_WORLD_MAP);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, xram_palette_ptr, XRAM_WORLD_PALETTE);
+    xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, xram_tile_ptr, XRAM_WORLD_TILES);
 
-    RIA.addr0 = BACKGROUND_DATA;
+    RIA.addr0 = XRAM_WORLD_MAP;
     RIA.step0 = 1;
-    for (i = 0; i < WORLD01_TILES_MAP_TOTAL_BYTES; i++)
+    for (i = 0; i < WORLD_TILES_WORLDMAP_MAP_TOTAL_BYTES; i++)
     {
-        RIA.rw0 = world01_tiles_map[i];
+        RIA.rw0 = world_tiles_worldmap_map[i];
     }
 
 
-    RIA.addr0 = BACKGROUND_TILES;
-    for (i = 0; i < WORLD01_TILES_TOTAL_BYTES; i++)
+    RIA.addr0 = XRAM_WORLD_TILES;
+    for (i = 0; i < WORLD_TILES_TOTAL_BYTES; i++)
     {
-        RIA.rw0 = world01_tiles[i];
+        RIA.rw0 = world_tiles[i];
     }
 
+    RIA.addr0 = XRAM_WORLD_PALETTE;
+    for (i = 0; i < WORLD_TILES_PALETTE_COUNT; i++)
+    {
+        RIA.rw0 = (uint8_t)world_tiles_palette[i];
+        RIA.rw0 = (uint8_t)(world_tiles_palette[i] >> 8);
+    }
+
+}
+
+static void set_objects(void)
+{
+    init_key(&objects[0], &player, 1, 368, 112);
+    init_key(&objects[1], &player, 2, 368, 640);
+    init_key(&objects[2], &player, 3, 608, 128);
+    init_door(&objects[3], &player, 4, 192, 192);
+    init_door(&objects[4], &player, 5, 160, 448);
+    init_door(&objects[5], &player, 6, 208, 368);
+    init_chest(&objects[6], &player, 7, 192, 144);
 }

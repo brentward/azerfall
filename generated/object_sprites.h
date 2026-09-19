@@ -1,0 +1,21 @@
+#ifndef OBJECT_SPRITES_H
+#define OBJECT_SPRITES_H
+
+#include <stdint.h>
+
+#define OBJECT_SPRITES_WIDTH 16
+#define OBJECT_SPRITES_HEIGHT 16
+#define OBJECT_SPRITES_BPP 4
+#define OBJECT_SPRITES_BYTES_PER_SPRITE 128
+#define OBJECT_SPRITES_COUNT 5
+#define OBJECT_SPRITES_TOTAL_BYTES 640
+
+#define OBJECT_IMAGE0 0
+#define OBJECT_IMAGE1 1
+#define OBJECT_IMAGE2 2
+#define OBJECT_IMAGE3 3
+#define OBJECT_IMAGE4 4
+
+extern const uint8_t object_sprites[OBJECT_SPRITES_TOTAL_BYTES];
+
+#endif
