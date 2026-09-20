@@ -4,7 +4,7 @@
 #include "../game/game.h"
 #include "../../generated/world_tiles_worldmap_map.h"
 
-uint8_t collision_check_tiles(const Entity *entity)
+void collision_check_tiles(Entity *entity)
 {
     uint16_t left_col;
     uint16_t right_col;
@@ -62,7 +62,7 @@ uint8_t collision_check_tiles(const Entity *entity)
 
     if (left < 0 || top < 0 ||
         right >= WORLD_TILES_WORLDMAP_MAP_TOTAL_X || bottom >= WORLD_TILES_WORLDMAP_MAP_TOTAL_Y) {
-        return true;
+        entity->collision_on = true;
     }
 
     left_col = left / TILE_SIZE;
@@ -70,21 +70,17 @@ uint8_t collision_check_tiles(const Entity *entity)
     top_row = top / TILE_SIZE;
     bottom_row = bottom / TILE_SIZE;
 
-    return
-        map_tile_is_solid(left_col, top_row) ||
+    entity->collision_on = 
+        (map_tile_is_solid(left_col, top_row) ||
         map_tile_is_solid(right_col, top_row) ||
         map_tile_is_solid(left_col, bottom_row) ||
-        map_tile_is_solid(right_col, bottom_row);
+        map_tile_is_solid(right_col, bottom_row));
 
 }
 
-uint8_t collision_check_object(const Entity *entity, GameObject *objects)
+uint8_t collision_check_object(Entity *entity, GameObject *objects)
 {
     uint8_t i;
-    // uint16_t left_col;
-    // uint16_t right_col;
-    // uint16_t top_row;
-    // uint16_t bottom_row;
     int16_t object_left;
     int16_t object_right;
     int16_t object_top;
@@ -142,14 +138,11 @@ uint8_t collision_check_object(const Entity *entity, GameObject *objects)
 
     if (left < 0 || top < 0 ||
         right >= WORLD_TILES_WORLDMAP_MAP_TOTAL_X || bottom >= WORLD_TILES_WORLDMAP_MAP_TOTAL_Y) {
-        return true;
+        entity->collision_on = true;
     }
 
     for (i = 0; i < OBJECT_COUNT; i++)
     {
-        if (!objects[i].collision)
-            continue;
-
         object_left = objects[i].world_x + objects[i].hitbox.x;
         object_right = object_left + objects[i].hitbox.width - 1;
         object_top = objects[i].world_y + objects[i].hitbox.y;
@@ -160,6 +153,10 @@ uint8_t collision_check_object(const Entity *entity, GameObject *objects)
             top <= object_bottom &&
             bottom >= object_top)
         {
+            if (objects[i].collision)
+            {
+                entity->collision_on = true;
+            }
             return i;
         }
     }

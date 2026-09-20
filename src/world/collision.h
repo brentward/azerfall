@@ -7,7 +7,7 @@
 #include "../object/object.h"
 
 
-uint8_t collision_check_tiles(const Entity *entity);
-uint8_t collision_check_object(const Entity *entity, GameObject *objects);
+void collision_check_tiles(Entity *entity);
+uint8_t collision_check_object(Entity *entity, GameObject *objects);
 
 #endif // COLLISION_H

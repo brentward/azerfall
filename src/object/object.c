@@ -140,6 +140,7 @@ void object_prepare_draw(GameObject *obj, Player *player)
 
     obj->screen_x = screen_position.screen_x;
     obj->screen_y = screen_position.screen_y;
+    obj->xram_sprite_ptr = XRAM_OBJECT_IMAGES + obj->state * BYTES_PER_SPRITE;
 }
 
 
@@ -147,5 +148,5 @@ void object_draw(GameObject *obj, uint8_t config_slot)
 {    
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, obj->screen_x);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, obj->screen_y);
-    // xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, config->xram_sprite_ptr);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, obj->xram_sprite_ptr);
 }

@@ -28,6 +28,9 @@ typedef struct Player {
     int16_t screen_org_x;
     int16_t screen_org_y;
 
+    uint8_t key_count;
+    uint8_t treasure_count;
+
 } Player;
 
 void player_init(Player *player);

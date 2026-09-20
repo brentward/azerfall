@@ -2,6 +2,7 @@
 #define ENTITY_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     int16_t x;
@@ -27,6 +28,7 @@ typedef struct {
 
     uint8_t speed;
     Direction direction;
+    bool collision_on;
 
     uint8_t animation_frame;
     uint8_t animation_timer;

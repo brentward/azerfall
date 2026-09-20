@@ -11,6 +11,8 @@
 #include "../world/collision.h"
 
 static void player_animation_update(Player *player);
+static void player_pickup_object(Player *player, GameObject *objects, uint8_t index);
+
 
 void player_init(Player *player)
 {
@@ -66,8 +68,9 @@ void player_graphics_init(void)
 void player_update(Player *player, GameObject objects[OBJECT_COUNT])
 {
     Entity *entity = &player->entity;
-    player->state = PLAYER_IDLE;
+    uint8_t index;
 
+    player->state = PLAYER_IDLE;
     
     if (input_state.up_pressed && !input_state.down_pressed && !input_state.left_pressed && !input_state.right_pressed)
     {
@@ -109,8 +112,13 @@ void player_update(Player *player, GameObject objects[OBJECT_COUNT])
         entity->direction = DIR_DOWN_RIGHT;
         player->state = PLAYER_WALKING;
     }
+    entity->collision_on = false;
 
-    if (player->state == PLAYER_WALKING && !collision_check_tiles(entity) && collision_check_object(entity, objects) == 255) {
+    collision_check_tiles(entity);
+
+    index = collision_check_object(entity, objects);
+
+    if (player->state == PLAYER_WALKING && !entity->collision_on) {
         switch (entity->direction) {
         case DIR_UP:
             entity->world_y -= entity->speed;
@@ -149,6 +157,8 @@ void player_update(Player *player, GameObject objects[OBJECT_COUNT])
             break;
         } 
     }
+    player_pickup_object(player, objects, index);
+    
     
     player_animation_update(player);
 }
@@ -182,6 +192,41 @@ static void player_animation_update(Player *player)
             break;
     }
     entity->xram_sprite_ptr =  XRAM_PLAYER_IMAGES + sprite_index * BYTES_PER_SPRITE;
+}
+
+static void player_pickup_object(Player *player, GameObject *objects, uint8_t index)
+{
+    if (index != 255)
+    {
+        switch (objects[index].type) {
+            case OBJECT_CHEST:
+                if (player->treasure_count == 0)
+                {
+                    player->treasure_count++;
+                    objects[index].state = CHEST_OPEN;
+                    puts("Gold: 500");
+                    puts("You win!");
+                }
+    
+                break;
+            case OBJECT_DOOR:
+                if (objects[index].state == DOOR_CLOSED && player->key_count > 0)
+                {
+                    player->key_count--;
+                    printf("Key: %u\n", player->key_count);
+                    objects[index].collision = false;
+                    objects[index].state = DOOR_OPENED;
+                }
+                break;
+            case OBJECT_KEY:
+                player->key_count++;
+                printf("Key: %u\n", player->key_count);
+                objects[index].world_x = -500;
+                objects[index].world_y = -500;
+                break;
+        }
+
+    }
 }
 
 void player_draw(Player *player)
