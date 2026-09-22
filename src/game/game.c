@@ -11,7 +11,6 @@
 #include "../object/object.h"
 #include "../input/input.h"
 #include "../audio/music.h"
-#include "../audio/sound.h"
 
 static Player player;
 static Game game;
@@ -112,7 +111,6 @@ void timed_update(void)
         object_draw(&objects[i], i + 1);
     }
     music_update(&game);
-    sound_update();
 }
 
 static void background_draw(void)
@@ -132,7 +130,6 @@ void game_init(void)
     player_graphics_init();
     input_init();
     music_init(&game, "ROM:Z3LIGHTW.BIN", true);
-    sound_init(XRAM_SOUND_CONFIGS);
     // /* Check after all uploads so later initialization overwrites are caught. */
     // verify_background_upload();
 }
