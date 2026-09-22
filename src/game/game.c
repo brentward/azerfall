@@ -10,6 +10,8 @@
 #include "player.h"
 #include "../object/object.h"
 #include "../input/input.h"
+#include "../audio/music.h"
+#include "../audio/sound.h"
 
 static Player player;
 static Game game;
@@ -68,7 +70,7 @@ static void set_objects(void);
 
 void game_update(void)
 {
-    int i;
+    uint8_t i;
     input_update();
     if (input_state.background_reload_pressed)
     {
@@ -100,15 +102,17 @@ void game_update(void)
     }
 }
 
-void draw(void)
+void timed_update(void)
 {
-    int i;
+    uint8_t i;
     background_draw();
     player_draw(&player);
     for (i = 0; i < OBJECT_COUNT; i++)
     {
         object_draw(&objects[i], i + 1);
     }
+    music_update(&game);
+    sound_update();
 }
 
 static void background_draw(void)
@@ -127,6 +131,8 @@ void game_init(void)
     set_objects();
     player_graphics_init();
     input_init();
+    music_init(&game, "ROM:Z3LIGHTW.BIN", true);
+    sound_init(XRAM_SOUND_CONFIGS);
     // /* Check after all uploads so later initialization overwrites are caught. */
     // verify_background_upload();
 }
@@ -160,7 +166,7 @@ static void background_init(void)
 /* Shared with the R-key diagnostic; only writes XRAM, never VGA registers. */
 static void background_upload(void)
 {
-    int i;
+    uint16_t i;
 
     xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, x_wrap, false);
     xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, y_wrap, false);

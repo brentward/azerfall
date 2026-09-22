@@ -24,8 +24,6 @@ int main(void)
         while (RIA.vsync == frame)
         {
         }
-        
-        draw();
-        
+        timed_update();
     }
 }

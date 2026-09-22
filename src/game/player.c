@@ -9,6 +9,7 @@
 #include "../xram_layout.h"
 #include "../input/input.h"
 #include "../world/collision.h"
+#include "../audio/sound.h"
 
 static void player_animation_update(Player *player);
 static void player_pickup_object(Player *player, GameObject *objects, uint8_t index);
@@ -215,6 +216,7 @@ static void player_pickup_object(Player *player, GameObject *objects, uint8_t in
                     player->key_count--;
                     printf("Key: %u\n", player->key_count);
                     objects[index].collision = false;
+                    sound_play_door_open();
                     objects[index].state = DOOR_OPENED;
                 }
                 break;

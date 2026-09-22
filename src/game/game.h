@@ -1,6 +1,8 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <stdint.h>
+
 // Screen Settings
 #define SCREEN_WIDTH        320
 #define SCREEN_HEIGHT       180
@@ -36,10 +38,14 @@ typedef enum {
 
 typedef struct {
     GameState state;
+    uint16_t song_xram_ptr;
+    uint16_t song_delay;
+    uint16_t song_size;
+    uint16_t song_bytes_remaining; /* Zero when unloaded or stopped. */
 } Game;
 
 void game_update(void);
-void draw(void);
+void timed_update(void);
 void game_init(void);
 
 #endif

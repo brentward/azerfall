@@ -1,0 +1,55 @@
+--- a/src/song.c
++++ b/src/song.c
+@@ -80,6 +80,19 @@
+     }
+ }
+ 
++/* RIA transfers may be partial; keep requests below signed 16-bit limits. */
++static bool transfer_xram(int fd, uint16_t address, uint16_t count, bool saving) {
++    while (count) {
++        uint16_t chunk = count > 4096U ? 4096U : count;
++        int n = saving ? write_xram(address, chunk, fd)
++                       : read_xram(address, chunk, fd);
++        if (n <= 0 || (uint16_t)n > chunk) return false;
++        address += (uint16_t)n;
++        count -= (uint16_t)n;
++    }
++    return true;
++}
++
+ void save_song(const char* filename) {
+     int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
+     if (fd < 0) return;
+@@ -90,10 +103,14 @@
+     write(fd, &song_length, 2);
+ 
+     // Save all 32 patterns ($B400 bytes)
+-    write_xram(0x0000, 0xB400, fd); 
++    if (!transfer_xram(fd, 0x0000, 0xB400, true) ||
++        !transfer_xram(fd, 0xB400, 0x0100, true)) {
++        printf("Error: Incomplete song save\n");
++        close(fd);
++        return;
++    }
+ 
+     // Save the 256-step Sequence Order (at $B400)
+-    write_xram(0xB400, 0x0100, fd);
+ 
+     close(fd);
+ }
+@@ -118,8 +135,13 @@
+     read(fd, &song_length, 2);
+ 
+     // 2. Load bulk data directly into XRAM
+-    read_xram(0x0000, 0xB400, fd); // Patterns
+-    read_xram(0xB400, 0x0100, fd); // Sequence List
++    if (!transfer_xram(fd, 0x0000, 0xB400, false) ||
++        !transfer_xram(fd, 0xB400, 0x0100, false)) {
++        seq.is_playing = false;
++        printf("Error: Incomplete song load; reload a complete RPT2 file\n");
++        close(fd);
++        return;
++    }
+ 
+     close(fd); // Close file immediately after reading
+ 

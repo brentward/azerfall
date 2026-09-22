@@ -6,6 +6,7 @@ project(MY-RP6502-PROJECT C CXX ASM)
 
 add_executable(azerfall)
 rp6502_asset(azerfall help src/help.txt)
+rp6502_asset(azerfall Z3LIGHTW.BIN assets/music/Z3LIGHTW.BIN)
 rp6502_executable(azerfall DATA default RESET default)
 target_sources(azerfall PRIVATE
     src/main.c
@@ -19,4 +20,6 @@ target_sources(azerfall PRIVATE
     src/world/map.c
     src/object/object.c
     generated/object_sprites.c
+    src/audio/music.c
+    src/audio/sound.c
 )
