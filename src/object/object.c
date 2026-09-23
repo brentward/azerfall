@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "../xram_layout.h"
+#include "../xram.h"
 #include "../graphics/graphics.h"
 #include "../game/player.h"
 

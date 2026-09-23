@@ -3,11 +3,16 @@
 
 #include <rp6502.h>
 
+#include "xram.h"
 #include "game\game.h"
 
 int main(void)
 {
     unsigned char frame;
+
+    printf("XRAM TOTAL: 65536 bytes\n");
+    printf("XRAM USED: %u bytes\n", XRAM_USED);
+    printf("XRAM FREE: %u bytes\n", XRAM_FREE);
 
     puts("AZERFALL RP6502");
     puts("Test: Player and interaction");

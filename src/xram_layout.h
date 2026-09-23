@@ -7,20 +7,20 @@
 #include "../generated/player_sprites.h"
 #include "../generated/object_sprites.h"
 
-#define PSG_CHANNELS 8
+// #define PSG_CHANNELS 8
 
-#define PSG_WAVE_SINE 0x00
-#define PSG_WAVE_SQUARE 0x10
-#define PSG_WAVE_SAWTOOTH 0x20
-#define PSG_WAVE_TRIANGLE 0x30
-#define PSG_WAVE_NOISE 0x40
+// #define PSG_WAVE_SINE 0x00
+// #define PSG_WAVE_SQUARE 0x10
+// #define PSG_WAVE_SAWTOOTH 0x20
+// #define PSG_WAVE_TRIANGLE 0x30
+// #define PSG_WAVE_NOISE 0x40
 
-#define PSG_GATE 0x01
+// #define PSG_GATE 0x01
 
-#define PSG_FREQ_HZ(hz) ((hz) * 3u)
-#define PSG_PAN(pan) ((uint8_t)((pan) * 2))
+// #define PSG_FREQ_HZ(hz) ((hz) * 3u)
+// #define PSG_PAN(pan) ((uint8_t)((pan) * 2))
 
-#define xreg_ria_psg(...) xreg(0, 1, 0, __VA_ARGS__)
+// #define xreg_ria_psg(...) xreg(0, 1, 0, __VA_ARGS__)
 #define xreg_ria_opl(...) xreg(0, 1, 1, __VA_ARGS__)
 
 #define XRAM_WORLD_MAP      0x0000U

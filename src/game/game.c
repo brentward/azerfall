@@ -6,11 +6,12 @@
 
 #include <rp6502.h>
 
-#include "../xram_layout.h"
+#include "../xram.h"
 #include "player.h"
 #include "../object/object.h"
 #include "../input/input.h"
 #include "../audio/music.h"
+#include "../audio/sound.h"
 
 static Player player;
 static Game game;
@@ -111,6 +112,7 @@ void timed_update(void)
         object_draw(&objects[i], i + 1);
     }
     music_update(&game);
+    sound_update();
 }
 
 static void background_draw(void)
@@ -129,6 +131,7 @@ void game_init(void)
     set_objects();
     player_graphics_init();
     input_init();
+    sound_init();
     music_init(&game, "ROM:Z3LIGHTW.BIN", true);
     // /* Check after all uploads so later initialization overwrites are caught. */
     // verify_background_upload();

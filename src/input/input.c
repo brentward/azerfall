@@ -4,7 +4,7 @@
 
 #include <rp6502.h>
 
-#include "../xram_layout.h"
+#include "../xram.h"
 #include "../input/usb_hid_keys.h"
 
 #define KEYBOARD_BYTES 32

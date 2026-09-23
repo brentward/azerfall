@@ -71,11 +71,13 @@ rows per tracker beat, so the converter scales its tempo to fit six rows per
 original beat. `--bpm` overrides the grid's tempo, also preserving the MIDI's
 elapsed timing. Neither option is a playback-speed control.
 
-The generated song contains all 1,270 notes, 24 unique patterns, and 34 sequence
+The generated song contains all 1,270 notes, 26 unique patterns, and 34 sequence
 entries. The RPT3 file is 46,346 bytes; this is the editor format, not the eventual
 game asset size. Source duration is 77.647 seconds; tracker duration is 79.971
 seconds because the last pattern is padded. Maximum note-boundary quantization
 error is about 55 ms, including minimum one-row durations for very short notes.
+Peak demand is seven simultaneous voices, so the song fits channels 0-6 without
+dropping notes. Channels 7 and 8 are left completely empty for sound effects.
 
 ## Load and export
 
@@ -91,7 +93,16 @@ error is about 55 ms, including minimum one-row durations for very short notes.
 The converter stops at RPT; exporting BIN happens inside RPTracker. The current
 upstream exporter has a 36,000-byte size guard and can truncate a large export;
 check its console output and audition the exported result before integration.
-This script does not yet install music playback in Azerfall.
+The game plays `assets/music/Z3LIGHTW.BIN`, not the RPT file. After regenerating
+the RPT, export it again in RPTracker, replace that BIN, and rebuild the game.
+The existing BIN still contains music on channels 7 and 8.
+
+Empty RPT channels prevent music notes from using the SFX channels, but
+RPTracker's BIN exporter also emits chip initialization and all-channel
+note-offs. The current game player applies these writes unchanged and clears
+the entire OPL register area when music stops. Protecting SFX during music
+restart, loop boundaries, and stop additionally requires the music player to
+preserve the reserved channels.
 
 ## Conversion behavior and limits
 
@@ -109,8 +120,10 @@ This script does not yet install music playback in Azerfall.
 - Quantizes starts and releases to the nearest row, with a minimum one-row
   note duration. Timing uses RPTracker's actual 60 Hz / 8.8 fixed-point formula.
   The default is four rows per source beat; use six for this song's triplets.
-- Assigns up to nine simultaneous voices, preferring the same voice for a MIDI
-  channel. Exceeding nine voices fails by default; `--overflow drop` explicitly
+- Assigns up to seven simultaneous voices on OPL channels 0-6, preferring the
+  same voice for a MIDI channel. Channels 7 and 8 are always reserved for SFX;
+  the RPT binary layout still stores nine channels for tracker compatibility.
+  Exceeding seven voices fails by default; `--overflow drop` explicitly
   permits dropping new notes and reports the count. Quantization can increase
   simultaneous voice demand. No notes are dropped for the supplied song.
 - Rejects melodic notes outside 12–107 rather than silently changing their
@@ -159,5 +172,6 @@ python -m unittest discover -s tools -p test_midi_to_rpt.py -v
 ```
 
 These include decoding the generated project song and verifying all 1,270 note
-starts and final voice releases. Actual tracker loading, listening, and BIN
+starts, final voice releases, and empty reserved channels in every stored
+pattern for both RPT2 and RPT3. Actual tracker loading, listening, and BIN
 export still need to be checked on the tracker/emulator.

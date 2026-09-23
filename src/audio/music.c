@@ -7,7 +7,8 @@
 
 #include <rp6502.h>
 
-#include "../xram_layout.h"
+#include "../xram.h"
+#include "sound.h"
 
 #define SONG_PACKET_SIZE 4U
 #define SONG_READ_CHUNK 4096U
@@ -18,10 +19,11 @@ static void music_stop(Game *game)
 
     game->song_bytes_remaining = 0;
     game->song_delay = 0;
-    RIA.addr1 = XRAM_OPL_REGISTERS;
-    RIA.step1 = 1;
-    for (i = 0; i < XRAM_OPL_REGISTERS_SIZE; ++i)
+    for (i = 0; i < 7; ++i)
+    {
+        RIA.addr1 = XRAM_OPL + 0xB0 + i;
         RIA.rw1 = 0;
+    }
 }
 
 void music_init(Game *game, const char *path, bool loop)
@@ -42,9 +44,9 @@ void music_init(Game *game, const char *path, bool loop)
     }
 
     /* Short transfers are valid; never write past the song region. */
-    while (total_bytes < XRAM_SONG_DATA_MAX_SIZE)
+    while (total_bytes < SONG_DATA_MAX_BYTES)
     {
-        count = XRAM_SONG_DATA_MAX_SIZE - total_bytes;
+        count = SONG_DATA_MAX_BYTES - total_bytes;
         if (count > SONG_READ_CHUNK)
             count = SONG_READ_CHUNK;
         bytes = read_xram(XRAM_SONG_DATA + total_bytes, count, fd);
@@ -60,7 +62,7 @@ void music_init(Game *game, const char *path, bool loop)
     }
 
     /* Probe oversized files in CPU RAM, without touching sprite configs. */
-    if (total_bytes == XRAM_SONG_DATA_MAX_SIZE)
+    if (total_bytes == SONG_DATA_MAX_BYTES)
     {
         bytes = read(fd, &extra, 1);
         if (bytes != 0)
@@ -75,7 +77,7 @@ void music_init(Game *game, const char *path, bool loop)
     }
     close(fd);
 
-    if (xreg_ria_opl(XRAM_OPL_REGISTERS) < 0)
+    if (xreg_ria_opl(XRAM_OPL) < 0)
     {
         perror("OPL2 setup");
         return;
@@ -127,8 +129,14 @@ void music_update(Game *game)
                 return;
             }
         }
-        RIA.addr1 = XRAM_OPL_REGISTERS + buf[0];
-        RIA.rw1 = buf[1];
+        /* Preserve SFX patches and the shared settings established by sound_init.
+         * RPTracker exports whole-chip resets at the start/end of the song. */
+        if (!is_sfx_register(buf[0]) &&
+            buf[0] != 0x01 && buf[0] != 0x08 && buf[0] != 0xBD)
+        {
+            RIA.addr1 = XRAM_OPL + buf[0];
+            RIA.rw1 = buf[1];
+        }
         game->song_delay = buf[2] | ((uint16_t)buf[3] << 8);
     }
 }

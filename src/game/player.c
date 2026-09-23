@@ -6,9 +6,10 @@
 
 #include <rp6502.h>
 
-#include "../xram_layout.h"
+#include "../xram.h"
 #include "../input/input.h"
 #include "../world/collision.h"
+#include "../audio/sound.h"
 
 static void player_animation_update(Player *player);
 static void player_pickup_object(Player *player, GameObject *objects, uint8_t index);
@@ -39,6 +40,8 @@ void player_init(Player *player)
     player->state = PLAYER_WALKING;
     player->screen_org_x = PLAYER_SCREEN_X - entity->world_x;
     player->screen_org_y = PLAYER_SCREEN_Y - entity->world_y;
+    // testing
+    player->key_count = 10;
 }
 
 void player_graphics_init(void)
@@ -215,11 +218,13 @@ static void player_pickup_object(Player *player, GameObject *objects, uint8_t in
                     player->key_count--;
                     printf("Key: %u\n", player->key_count);
                     objects[index].collision = false;
+                    sound_play(SFX_DOOR);
                     objects[index].state = DOOR_OPENED;
                 }
                 break;
             case OBJECT_KEY:
                 player->key_count++;
+                sound_play(SFX_PICKUP);
                 printf("Key: %u\n", player->key_count);
                 objects[index].world_x = -500;
                 objects[index].world_y = -500;

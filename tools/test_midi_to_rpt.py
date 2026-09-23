@@ -108,14 +108,15 @@ class MidiTests(unittest.TestCase):
         self.assertEqual(decode(convert(source)[0])[0][0][2], 0)
 
     def test_overflow_fails_unless_explicitly_allowed(self):
-        events = [(0, bytes((0x90, pitch, 127))) for pitch in range(60, 70)]
-        events += [(120 if pitch == 60 else 0, bytes((0x80, pitch, 0))) for pitch in range(60, 70)]
+        events = [(0, bytes((0x90, pitch, 127))) for pitch in range(60, 68)]
+        events += [(120 if pitch == 60 else 0, bytes((0x80, pitch, 0))) for pitch in range(60, 68)]
         source = midi(events)
-        with self.assertRaisesRegex(ValueError, "More than nine voices"):
+        with self.assertRaisesRegex(ValueError, "More than 7 music voices"):
             convert(source)
         blob, report = convert(source, overflow="drop")
         self.assertEqual(report["dropped_notes"], 1)
-        self.assertEqual(sum(cell[0] not in (0, 255) for row in decode(blob) for cell in row), 9)
+        self.assertEqual(sum(cell[0] not in (0, 255) for row in decode(blob) for cell in row), 7)
+        self.assertTrue(all(cell == (0, 0, 0, 0) for row in decode(blob) for cell in row[7:]))
 
     def test_pattern_boundary_release(self):
         source = midi([(0, b"\x90\x3c\x7f"), (960, b"\x80\x3c\x00")])
@@ -159,6 +160,14 @@ class MidiTests(unittest.TestCase):
         rows = decode(blob)
         self.assertEqual(report["input_notes"], 1270)
         self.assertEqual(report["dropped_notes"], 0)
+        self.assertEqual(report["peak_voices"], 7)
+        self.assertEqual(report["music_channels"], list(range(7)))
+        self.assertEqual(report["reserved_sfx_channels"], [7, 8])
+        # Check every stored pattern, including unused patterns, in both formats.
+        for version, header_size in ((2, 8), (3, 10)):
+            stored, _ = convert(source, rows_per_beat=6, rpt_version=version)
+            for offset in range(header_size, header_size + 46080, 45):
+                self.assertEqual(stored[offset + 35:offset + 45], bytes(10))
         self.assertEqual(sum(cell[0] not in (0, 255) for row in rows for cell in row), 1270)
         self.assertEqual(report["tracker_bpm"], 204)
         self.assertLessEqual(report["unique_patterns"], 32)

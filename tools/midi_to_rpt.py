@@ -195,6 +195,8 @@ def extract_notes(division, events):
 
 ROWS = 32
 VOICES = 9
+# Keep the nine-channel RPT layout, but reserve OPL channels 7 and 8 for SFX.
+MUSIC_VOICES = 7
 PATTERNS = 32
 CELL_SIZE = 5
 PATTERN_SIZE = ROWS * VOICES * CELL_SIZE
@@ -243,8 +245,8 @@ def convert(data, rows_per_beat=4, bpm=None, overflow="error", rpt_version=3):
     if order_count > 255:
         raise ValueError(f"Song needs {order_count} sequence entries; maximum is 255")
     grid = bytearray(order_count * PATTERN_SIZE)
-    voices = [None] * VOICES
-    previous_channels = [None] * VOICES
+    voices = [None] * MUSIC_VOICES
+    previous_channels = [None] * MUSIC_VOICES
     dropped = peak = 0
 
     def cell(row, voice, pitch, instrument=0, volume=0):
@@ -259,7 +261,7 @@ def convert(data, rows_per_beat=4, bpm=None, overflow="error", rpt_version=3):
         free = [voice for voice, active in enumerate(voices) if active is None]
         if not free:
             if overflow == "error":
-                raise ValueError(f"More than nine voices at row {start} ({float(start * row_seconds):.3f}s); "
+                raise ValueError(f"More than {MUSIC_VOICES} music voices at row {start} ({float(start * row_seconds):.3f}s); "
                                  "use a finer grid or explicitly allow --overflow drop")
             dropped += 1
             continue
@@ -294,7 +296,8 @@ def convert(data, rows_per_beat=4, bpm=None, overflow="error", rpt_version=3):
               + bytes(order) + bytes(256 - len(order)))
     report = {
         "format": f"RPT{rpt_version}", "input_notes": len(notes), "written_notes": len(notes) - dropped,
-        "dropped_notes": dropped, "peak_voices": peak, "midi_seconds": float(duration),
+        "dropped_notes": dropped, "peak_voices": peak, "music_channels": list(range(MUSIC_VOICES)),
+        "reserved_sfx_channels": list(range(MUSIC_VOICES, VOICES)), "midi_seconds": float(duration),
         "tracker_seconds": float(len(order) * ROWS * row_seconds), "tracker_bpm": bpm,
         "row_milliseconds": float(row_seconds * 1000),
         "maximum_note_timing_error_ms": float(max_error * 1000),
@@ -312,7 +315,7 @@ def main():
                         help="Grid density at the initial MIDI tempo (default: 4; use 6 for triplets)")
     parser.add_argument("--bpm", type=int, help="Override tracker grid BPM, 60..240; preserves MIDI duration")
     parser.add_argument("--overflow", choices=("error", "drop"), default="error",
-                        help="Policy when all nine voices are busy (default: error)")
+                        help="Policy when all seven music voices are busy (default: error; channels 7/8 reserved for SFX)")
     parser.add_argument("--report", type=Path, help="Write conversion statistics as JSON")
     parser.add_argument("--rpt-version", type=int, choices=(2, 3), default=3,
                         help="3 (default): embeds tempo for current source builds; 2: patched v0.8, manual tempo")
@@ -334,6 +337,7 @@ def main():
               f"{report['sequence_entries']} sequence entries, {report['tracker_bpm']} tracker BPM")
         print(f"Duration: MIDI {report['midi_seconds']:.3f}s, tracker {report['tracker_seconds']:.3f}s; "
               f"maximum note timing error {report['maximum_note_timing_error_ms']:.1f}ms")
+        print(f"Music: channels 0-6, peak {report['peak_voices']}/7 voices; channels 7-8 reserved for SFX")
         for warning, count in report["warnings"].items():
             print(f"warning: {warning} ({count})", file=sys.stderr)
         if report["dropped_notes"]:
