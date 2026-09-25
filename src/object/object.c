@@ -81,7 +81,6 @@ void init_key(GameObject *key, Player *player, uint8_t config_slot, int16_t worl
     Entity *entity = &player->entity;
     ScreenPosition screen_position;
 
-
     HitBox *hitbox;
     ObjectType *type;
     ObjectState *state;

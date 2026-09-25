@@ -22,4 +22,5 @@ target_sources(azerfall PRIVATE
     generated/object_sprites.c
     src/audio/music.c
     src/audio/sound.c
+    src/game/ui.c
 )

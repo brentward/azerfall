@@ -8,6 +8,7 @@
 
 #include "../xram.h"
 #include "player.h"
+#include "ui.h"
 #include "../object/object.h"
 #include "../input/input.h"
 #include "../audio/music.h"
@@ -84,10 +85,12 @@ void game_update(void)
         switch (game.state) {
         case GAME_STATE_PLAY:
             game.state = GAME_STATE_PAUSE;
+            ui_prepare_pause();
             break;
 
         case GAME_STATE_PAUSE:
             game.state = GAME_STATE_PLAY;
+            ui_clear_pause();
             break;
         }
     }
@@ -99,6 +102,7 @@ void game_update(void)
         {
             object_prepare_draw(&objects[i], &player);
         }
+        ui_prepare_draw();
     }
 }
 
@@ -106,6 +110,7 @@ void timed_update(void)
 {
     uint8_t i;
     background_draw();
+    ui_draw();
     player_draw(&player);
     for (i = 0; i < OBJECT_COUNT; i++)
     {
@@ -130,6 +135,7 @@ void game_init(void)
     background_init();
     set_objects();
     player_graphics_init();
+    ui_init();
     input_init();
     sound_init();
     music_init(&game, "ROM:Z3LIGHTW.BIN", true);
@@ -142,7 +148,7 @@ static void background_init(void)
     unsigned char frame;
 
     // xreg_vga_canvas(2);
-    if (xreg_vga_canvas(2) < 0)
+    if (xreg_vga_canvas(CANVAS_320X180) < 0)
     {
         perror("VGA canvas setup");
         exit(EXIT_FAILURE);
@@ -155,8 +161,7 @@ static void background_init(void)
     }
     background_upload();
 
-    // xreg_vga_mode(2, 10, XRAM_BG_CONFIG, 2);
-    if (xreg_vga_mode(2, 10, XRAM_BG_CONFIG, 2) < 0)
+    if (xreg_vga_mode2(MODE2_4BPP | MODE2_16X16, XRAM_BG_CONFIG, VGA_PLANE_WORLD) < 0)
     {
         perror("VGA background setup");
         exit(EXIT_FAILURE);

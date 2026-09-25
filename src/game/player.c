@@ -10,6 +10,7 @@
 #include "../input/input.h"
 #include "../world/collision.h"
 #include "../audio/sound.h"
+#include "ui.h"
 
 static void player_animation_update(Player *player);
 static void player_pickup_object(Player *player, GameObject *objects, uint8_t index);
@@ -40,8 +41,8 @@ void player_init(Player *player)
     player->state = PLAYER_WALKING;
     player->screen_org_x = PLAYER_SCREEN_X - entity->world_x;
     player->screen_org_y = PLAYER_SCREEN_Y - entity->world_y;
-    // testing
-    player->key_count = 10;
+    // // testing
+    // player->key_count = 10;
 }
 
 void player_graphics_init(void)
@@ -60,8 +61,7 @@ void player_graphics_init(void)
         RIA.rw0 = player_sprites[i];
     }
     // LENGTH is the number of sprite configs, not a byte size.
-    // xreg_vga_mode(5, 10, PLAYER_SPRITE_CONFIG, 1, 2);
-    if (xreg_vga_mode(5, 10, XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), 8, 2) < 0)
+    if (xreg_vga_mode5(MODE5_4BPP | MODE5_16X16, XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), 8, VGA_PLANE_SPRITES) < 0)
     {
         perror("VGA sprite setup");
         exit(EXIT_FAILURE);
@@ -213,18 +213,26 @@ static void player_pickup_object(Player *player, GameObject *objects, uint8_t in
     
                 break;
             case OBJECT_DOOR:
-                if (objects[index].state == DOOR_CLOSED && player->key_count > 0)
+                if (objects[index].state == DOOR_CLOSED)
                 {
-                    player->key_count--;
-                    printf("Key: %u\n", player->key_count);
-                    objects[index].collision = false;
-                    sound_play(SFX_DOOR);
-                    objects[index].state = DOOR_OPENED;
+                    if (player->key_count > 0)
+                    {
+                        player->key_count--;
+                        printf("Key: %u\n", player->key_count);
+                        objects[index].collision = false;
+                        sound_play(SFX_DOOR);
+                        ui_show_message("You opened a door!");
+                        objects[index].state = DOOR_OPENED;
+                    } else
+                    {
+                        ui_show_message("You need a key!");
+                    }
                 }
                 break;
             case OBJECT_KEY:
                 player->key_count++;
                 sound_play(SFX_PICKUP);
+                ui_show_message("You got a key!");
                 printf("Key: %u\n", player->key_count);
                 objects[index].world_x = -500;
                 objects[index].world_y = -500;

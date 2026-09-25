@@ -15,8 +15,37 @@
 /* Insert xram.h snippets from docs to build your system. */
 /* https://picocomputer.github.io/sdk.html#xram-memory-map */
 #define xreg_ria_opl(...) xreg(0, 1, 1, __VA_ARGS__)
+#define xreg_vga_mode1(...) xreg(1, 0, 1, 1, __VA_ARGS__)
 #define xreg_vga_mode2(...) xreg(1, 0, 1, 2, __VA_ARGS__)
 #define xreg_vga_mode5(...) xreg(1, 0, 1, 5, __VA_ARGS__)
+
+/* Separate planes keep UI fill programming from replacing the tile map. */
+#define VGA_PLANE_WORLD 0
+#define VGA_PLANE_SPRITES 1
+#define VGA_PLANE_UI 2
+
+#define CANVAS_CONSOLE 0
+#define CANVAS_320X240 1
+#define CANVAS_320X180 2
+#define CANVAS_640X480 3
+#define CANVAS_640X360 4
+
+#define MODE1_1BPP 0x00
+#define MODE1_4BPPR 0x01
+#define MODE1_4BPP 0x02
+#define MODE1_8BPP 0x03
+#define MODE1_16BPP 0x04
+
+#define MODE1_8X8 0x00
+#define MODE1_8X16 0x08
+
+#define MODE1_FG_BG(fg, bg) ((uint8_t)(((fg) << 4) | (bg)))
+#define MODE1_BG_FG(bg, fg) ((uint8_t)(((bg) << 4) | (fg)))
+
+#define UI_MESSAGE_WIDTH_CHAR 24
+#define UI_MESSAGE_HEIGHT_CHAR 2
+#define UI_MESSAGE_SIZE (UI_MESSAGE_WIDTH_CHAR * UI_MESSAGE_HEIGHT_CHAR + 1)
+
 
 #define MODE2_1BPP 0x00
 #define MODE2_2BPP 0x01
@@ -49,6 +78,24 @@
 #define COLOR_FROM_RGB5(r, g, b) \
     (((unsigned)(b) << 11) | ((unsigned)(g) << 6) | (unsigned)(r))
 #define COLOR_ALPHA_MASK (1u << 5)
+
+/* Built-in ANSI palette indices */
+#define ANSI_BLACK           0x00
+#define ANSI_RED             0x01
+#define ANSI_GREEN           0x02
+#define ANSI_YELLOW          0x03
+#define ANSI_BLUE            0x04
+#define ANSI_MAGENTA         0x05
+#define ANSI_CYAN            0x06
+#define ANSI_WHITE           0x07
+#define ANSI_BRIGHT_BLACK    0x08  /* Dark gray */
+#define ANSI_BRIGHT_RED      0x09
+#define ANSI_BRIGHT_GREEN    0x0A
+#define ANSI_BRIGHT_YELLOW   0x0B
+#define ANSI_BRIGHT_BLUE     0x0C
+#define ANSI_BRIGHT_MAGENTA  0x0D
+#define ANSI_BRIGHT_CYAN     0x0E
+#define ANSI_BRIGHT_WHITE    0x0F
 
 #define SONG_DATA_MAX_BYTES 0x8000U
 
@@ -99,6 +146,46 @@ typedef struct
 {
     uint8_t reg[OPL_REGISTERS_SIZE];
 } opl_t;
+
+typedef struct
+{
+    bool x_wrap;
+    bool y_wrap;
+    int16_t x_pos_px;
+    int16_t y_pos_px;
+    int16_t width_chars;
+    int16_t height_chars;
+    uint16_t xram_data_ptr;
+    uint16_t xram_palette_ptr;
+    uint16_t xram_font_ptr;
+} mode1_config_t;
+
+typedef struct
+{
+    uint8_t glyph_code;
+    uint8_t fg_bg_index;
+} mode1_4bppr_data_t;
+
+typedef struct
+{
+    uint8_t glyph_code;
+    uint8_t bg_fg_index;
+} mode1_4bpp_data_t;
+
+typedef struct
+{
+    uint8_t glyph_code;
+    uint8_t fg_index;
+    uint8_t bg_index;
+} mode1_8bpp_data_t;
+
+typedef struct
+{
+    uint8_t glyph_code;
+    uint8_t attributes;
+    uint16_t fg_color;
+    uint16_t bg_color;
+} mode1_16bpp_data_t;
 
 #define MODE2_TILE(bpp, size)                 \
     struct                                    \
@@ -174,8 +261,10 @@ typedef struct
     MODE5_IMAGE(PLAYER_SPRITES_BPP, PLAYER_SPRITES_WIDTH) player_images[PLAYER_SPRITES_COUNT];
     MODE5_IMAGE(OBJECT_SPRITES_BPP, OBJECT_SPRITES_WIDTH) object_images[OBJECT_SPRITES_COUNT];
     uint8_t song_data[SONG_DATA_MAX_BYTES];
-    mode5_sprite_t sprite_configs[SPRITE_LIMIT];
+    mode1_4bpp_data_t ui_message[UI_MESSAGE_SIZE];
     uint16_t world_palette[1 << WORLD_TILES_BPP];
+    mode5_sprite_t sprite_configs[SPRITE_LIMIT];
+    mode1_config_t ui_config;
     mode2_config_t bg_config;
     keyboard_t keyboard;
     gamepad_t gamepad;
@@ -193,12 +282,17 @@ typedef struct
 #define XRAM_PLAYER_IMAGES offsetof(xram_layout_t, player_images)
 #define XRAM_OBJECT_IMAGES offsetof(xram_layout_t, object_images)
 #define XRAM_SONG_DATA offsetof(xram_layout_t, song_data)
+#define XRAM_WORLD_PALETTE offsetof(xram_layout_t, world_palette)
+#define XRAM_UI_MESSAGE offsetof(xram_layout_t, ui_message)
 #define XRAM_SPRITE_CONFIGS offsetof(xram_layout_t, sprite_configs)
 #define XRAM_SPRITE_CONFIG(slot) \
     (XRAM_SPRITE_CONFIGS + (slot) * sizeof(vga_mode5_sprite_t))
-#define XRAM_WORLD_PALETTE offsetof(xram_layout_t, world_palette)
+#define XRAM_UI_CONFIG offsetof(xram_layout_t, ui_config)
 #define XRAM_BG_CONFIG offsetof(xram_layout_t, bg_config)
 #define XRAM_KEYBOARD offsetof(xram_layout_t, keyboard)
 #define XRAM_GAMEPAD offsetof(xram_layout_t, gamepad)
+
+#define XRAM_DEFAULT_FONT 0xFFFFU
+#define XRAM_DEFAULT_PALETTE 0xFFFFU
 
 #endif
