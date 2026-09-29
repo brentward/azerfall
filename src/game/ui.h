@@ -7,12 +7,12 @@
 
 #include "../xram.h"
 
-typedef struct Ui {
+typedef struct {
     bool message_on;
     // char message[UI_MESSAGE_SIZE];
     uint8_t message_counter;
     bool game_finshed;
-} Ui;
+} ui_t;
 
 void ui_init(void);
 void ui_show_message(char *message);

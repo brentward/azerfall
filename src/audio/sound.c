@@ -1,42 +1,22 @@
 #include "sound.h"
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include <rp6502.h>
 
 #include "../xram.h"
 
 #define SFX_CHANNEL_COUNT 2
-#define SFX_REGISTER_COUNT 26
 
 typedef struct
 {
-    SfxId sound;
+    sfx_id_t sound;
     uint8_t frame;
     uint8_t delay;
-} SfxVoice;
+} sfx_voice_t;
 
-static SfxVoice voices[SFX_CHANNEL_COUNT];  /* OPL channels 7 and 8 */
-
-uint8_t sfx_registers [SFX_REGISTER_COUNT] = {
-    /* Channel 7 */
-0x31, 0x34,  // Operator settings
-0x51, 0x54,  // Volume
-0x71, 0x74,  // Attack/decay
-0x91, 0x94,  // Sustain/release
-0xF1, 0xF4,  // Waveforms
-0xA7, 0xB7,  // Pitch and note on/off
-0xC7,        // Feedback/connection
-
-/* Channel 8 */
-0x32, 0x35,
-0x52, 0x55,
-0x72, 0x75,
-0x92, 0x95,
-0xF2, 0xF5,
-0xA8, 0xB8,
-0xC8
-};
+static sfx_voice_t voices[SFX_CHANNEL_COUNT];  /* OPL channels 7 and 8 */
 
 static const uint8_t door_level[DOOR_FRAMES] = {
     0, 5, 9, 15, 23, 45, 0, 0,
@@ -128,7 +108,7 @@ static void opl_set_pitch(uint16_t fnum, uint8_t block, uint8_t key_on, uint8_t 
               ((fnum >> 8) & 0x03));
 }
 
-void sound_play(SfxId sound)
+void sound_play(sfx_id_t sound)
 {
     uint8_t i;
 
@@ -251,19 +231,35 @@ void sound_update(void)
 
 bool is_sfx_register(uint8_t reg)
 {
-    uint8_t i;
-
-    for (i = 0; i < SFX_REGISTER_COUNT; i++)
+    uint8_t slot;
+    /* OPL operator banks share the same sparse slot mapping. Avoid a
+     * 26-entry search for every music packet on the 6502. */
+    switch (reg & 0xE0)
     {
-        if (reg == sfx_registers[i])
-            return true;
+        case 0x20:
+        case 0x40:
+        case 0x60:
+        case 0x80:
+        case 0xE0:
+            slot = reg & 0x1F;
+            return slot == 0x11 || slot == 0x12 ||
+                   slot == 0x14 || slot == 0x15;
     }
-    return false;
+    return reg == 0xA7 || reg == 0xA8 ||
+           reg == 0xB7 || reg == 0xB8 ||
+           reg == 0xC7 || reg == 0xC8;
 }
 
 void sound_init(void)
 {
     uint8_t i;
+    /* Enabling OPL resets the chip AND its XRAM register page. Configure
+     * it once here, before writing the shared settings or any patches. */
+    if (xreg_ria_opl(XRAM_OPL) < 0)
+    {
+        perror("OPL2 setup");
+        return;
+    }
     /* Shared chip settings belong to the game, not the music stream. */
     opl_write(0x01, 0x20); /* Enable the waveforms selected by each patch. */
     opl_write(0x08, 0x00); /* Normal note-select mode; CSM disabled. */

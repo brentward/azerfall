@@ -24,12 +24,12 @@ typedef enum {
     SFX_NONE,
     SFX_DOOR,
     SFX_PICKUP
-} SfxId;
+} sfx_id_t;
 
 
 
 void sound_init(void);
-void sound_play(SfxId sound);
+void sound_play(sfx_id_t sound);
 void sound_update(void);
 bool is_sfx_register(uint8_t reg);
 

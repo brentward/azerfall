@@ -42,10 +42,39 @@
 #define MODE1_FG_BG(fg, bg) ((uint8_t)(((fg) << 4) | (bg)))
 #define MODE1_BG_FG(bg, fg) ((uint8_t)(((bg) << 4) | (fg)))
 
-#define UI_MESSAGE_WIDTH_CHAR 24
-#define UI_MESSAGE_HEIGHT_CHAR 2
-#define UI_MESSAGE_SIZE (UI_MESSAGE_WIDTH_CHAR * UI_MESSAGE_HEIGHT_CHAR + 1)
 
+#define UI_UPPER_WIDTH_CHAR 40
+#define UI_UPPER_HEIGHT_CHAR 1
+#define UI_UPPER_SIZE (UI_UPPER_WIDTH_CHAR * UI_UPPER_HEIGHT_CHAR)
+#define UI_UPPER_SCANLINE_START 0
+/* Mode 1 scanline ranges include START and exclude END. */
+#define UI_UPPER_SCANLINE_END (UI_UPPER_SCANLINE_START + (UI_UPPER_HEIGHT_CHAR * 8))
+#define UI_UPPER_X_POS_PX 0
+#define UI_UPPER_Y_POS_PX (UI_UPPER_SCANLINE_START)
+
+#define UI_PAUSE_WIDTH_CHAR 5
+#define UI_PAUSE_HEIGHT_CHAR 1
+#define UI_PAUSE_SIZE (UI_PAUSE_WIDTH_CHAR * UI_PAUSE_HEIGHT_CHAR)
+#define UI_PAUSE_SCANLINE_START 102
+#define UI_PAUSE_SCANLINE_END (UI_PAUSE_SCANLINE_START + (UI_PAUSE_HEIGHT_CHAR * 8))
+#define UI_PAUSE_X_POS_PX ((SCREEN_WIDTH / 2) - (UI_PAUSE_WIDTH_CHAR * 8 / 2))
+#define UI_PAUSE_Y_POS_PX (UI_PAUSE_SCANLINE_START)
+
+#define UI_MESSAGE_WIDTH_CHAR 40
+#define UI_MESSAGE_HEIGHT_CHAR 5
+#define UI_MESSAGE_SIZE (UI_MESSAGE_WIDTH_CHAR * UI_MESSAGE_HEIGHT_CHAR)
+#define UI_MESSAGE_SCANLINE_START 116
+#define UI_MESSAGE_SCANLINE_END (UI_MESSAGE_SCANLINE_START + (UI_MESSAGE_HEIGHT_CHAR * 8))
+#define UI_MESSAGE_X_POS_PX 0
+#define UI_MESSAGE_Y_POS_PX (UI_MESSAGE_SCANLINE_START)
+
+#define UI_LOWER_WIDTH_CHAR 40
+#define UI_LOWER_HEIGHT_CHAR 1
+#define UI_LOWER_SIZE (UI_LOWER_WIDTH_CHAR * UI_LOWER_HEIGHT_CHAR)
+#define UI_LOWER_SCANLINE_START 172
+#define UI_LOWER_SCANLINE_END (UI_LOWER_SCANLINE_START + (UI_LOWER_HEIGHT_CHAR * 8))
+#define UI_LOWER_X_POS_PX 0
+#define UI_LOWER_Y_POS_PX (UI_LOWER_SCANLINE_START)
 
 #define MODE2_1BPP 0x00
 #define MODE2_2BPP 0x01
@@ -81,6 +110,7 @@
 
 /* Built-in ANSI palette indices */
 #define ANSI_BLACK           0x00
+#define ANSI_TRANSPARENT     0x00
 #define ANSI_RED             0x01
 #define ANSI_GREEN           0x02
 #define ANSI_YELLOW          0x03
@@ -261,10 +291,16 @@ typedef struct
     MODE5_IMAGE(PLAYER_SPRITES_BPP, PLAYER_SPRITES_WIDTH) player_images[PLAYER_SPRITES_COUNT];
     MODE5_IMAGE(OBJECT_SPRITES_BPP, OBJECT_SPRITES_WIDTH) object_images[OBJECT_SPRITES_COUNT];
     uint8_t song_data[SONG_DATA_MAX_BYTES];
+    mode1_4bpp_data_t ui_upper[UI_UPPER_SIZE];
+    mode1_4bpp_data_t ui_pause[UI_PAUSE_SIZE];
     mode1_4bpp_data_t ui_message[UI_MESSAGE_SIZE];
+    mode1_4bpp_data_t ui_lower[UI_LOWER_SIZE];
     uint16_t world_palette[1 << WORLD_TILES_BPP];
     mode5_sprite_t sprite_configs[SPRITE_LIMIT];
-    mode1_config_t ui_config;
+    mode1_config_t ui_upper_config;
+    mode1_config_t ui_pause_config;
+    mode1_config_t ui_message_config;
+    mode1_config_t ui_lower_config;
     mode2_config_t bg_config;
     keyboard_t keyboard;
     gamepad_t gamepad;
@@ -283,11 +319,17 @@ typedef struct
 #define XRAM_OBJECT_IMAGES offsetof(xram_layout_t, object_images)
 #define XRAM_SONG_DATA offsetof(xram_layout_t, song_data)
 #define XRAM_WORLD_PALETTE offsetof(xram_layout_t, world_palette)
+#define XRAM_UI_UPPER offsetof(xram_layout_t, ui_upper)
+#define XRAM_UI_PAUSE offsetof(xram_layout_t, ui_pause)
 #define XRAM_UI_MESSAGE offsetof(xram_layout_t, ui_message)
+#define XRAM_UI_LOWER offsetof(xram_layout_t, ui_lower)
 #define XRAM_SPRITE_CONFIGS offsetof(xram_layout_t, sprite_configs)
 #define XRAM_SPRITE_CONFIG(slot) \
     (XRAM_SPRITE_CONFIGS + (slot) * sizeof(vga_mode5_sprite_t))
-#define XRAM_UI_CONFIG offsetof(xram_layout_t, ui_config)
+#define XRAM_UI_UPPER_CONFIG offsetof(xram_layout_t, ui_upper_config)
+#define XRAM_UI_PAUSE_CONFIG offsetof(xram_layout_t, ui_pause_config)
+#define XRAM_UI_MESSAGE_CONFIG offsetof(xram_layout_t, ui_message_config)
+#define XRAM_UI_LOWER_CONFIG offsetof(xram_layout_t, ui_lower_config)
 #define XRAM_BG_CONFIG offsetof(xram_layout_t, bg_config)
 #define XRAM_KEYBOARD offsetof(xram_layout_t, keyboard)
 #define XRAM_GAMEPAD offsetof(xram_layout_t, gamepad)

@@ -11,9 +11,9 @@ typedef struct
     bool right_pressed; 
     bool pause_pressed;
     bool background_reload_pressed; // Temporary R-key graphics diagnostic.
-} InputState;
+} input_state_t;
 
-extern InputState input_state;
+extern input_state_t input_state;
 
 void input_init(void);
 void input_update(void);

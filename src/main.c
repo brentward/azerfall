@@ -9,6 +9,8 @@
 int main(void)
 {
     unsigned char frame;
+    unsigned char now;
+    unsigned char audio_frame;
 
     printf("XRAM TOTAL: 65536 bytes\n");
     printf("XRAM USED: %u bytes\n", XRAM_USED);
@@ -20,15 +22,24 @@ int main(void)
 
     game_init();
 
-    frame = RIA.vsync;
+    audio_frame = RIA.vsync;
 
     while (true)
     {
         game_update();
+        /* Always wait for a fresh edge: game/audio work may have crossed
+         * VSYNC, in which case drawing immediately would tear mid-scan. */
         frame = RIA.vsync;
         while (RIA.vsync == frame)
         {
         }
+        now = RIA.vsync;
+        /* Publish camera and sprite positions first, while still at the
+         * start of the display frame. Audio batches have variable cost. */
         timed_update();
+        /* Unlike the drawing fence, this timestamp persists across work
+         * and waits so missed frames do not slow down the music. */
+        audio_update((unsigned char)(now - audio_frame));
+        audio_frame = now;
     }
 }

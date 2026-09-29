@@ -4,65 +4,25 @@
 #include "../game/game.h"
 #include "../../generated/world_tiles_worldmap_map.h"
 
-void collision_check_tiles(Entity *entity)
+void collision_check_tiles(entity_t *entity, int16_t dx, int16_t dy)
 {
     uint16_t left_col;
     uint16_t right_col;
     uint16_t top_row;
     uint16_t bottom_row;
 
-    int16_t left = entity->world_x + entity->hitbox.x;
+    int16_t left = entity->world_x + entity->hitbox.x + dx;
 
     int16_t right = left + entity->hitbox.width - 1;
 
-    int16_t top = entity->world_y + entity->hitbox.y;
+    int16_t top = entity->world_y + entity->hitbox.y + dy;
 
     int16_t bottom = top + entity->hitbox.height - 1;
-
-    switch(entity->direction) {
-
-    case DIR_UP:
-        top -= entity->speed;
-        break;
-
-    case DIR_DOWN:
-        bottom += entity->speed;
-        break;
-
-    case DIR_LEFT:
-        left -= entity->speed;
-        break;
-
-    case DIR_RIGHT:
-        right += entity->speed;
-        break;
-
-    case DIR_UP_LEFT:
-        /* Match the unscaled diagonal step in player_update(). */
-        left -= entity->speed;
-        top -= entity->speed;
-        break;
-
-    case DIR_DOWN_LEFT:
-        left -= entity->speed;
-        bottom += entity->speed;
-        break;
-
-    case DIR_UP_RIGHT:
-        right += entity->speed;
-        top -= entity->speed;
-        break;
-
-    case DIR_DOWN_RIGHT:
-        right += entity->speed;
-        bottom += entity->speed;
-        break;
-
-    }
 
     if (left < 0 || top < 0 ||
         right >= WORLD_TILES_WORLDMAP_MAP_TOTAL_X || bottom >= WORLD_TILES_WORLDMAP_MAP_TOTAL_Y) {
         entity->collision_on = true;
+        return;
     }
 
     left_col = left / TILE_SIZE;
@@ -78,63 +38,22 @@ void collision_check_tiles(Entity *entity)
 
 }
 
-uint8_t collision_check_object(Entity *entity, GameObject *objects)
+uint8_t collision_check_object(entity_t *entity, object_t *objects, int16_t dx, int16_t dy)
 {
     uint8_t i;
+    uint8_t index = 255;
     int16_t object_left;
     int16_t object_right;
     int16_t object_top;
     int16_t object_bottom;
 
-    int16_t left = entity->world_x + entity->hitbox.x;
+    int16_t left = entity->world_x + entity->hitbox.x + dx;
 
     int16_t right = left + entity->hitbox.width - 1;
 
-    int16_t top = entity->world_y + entity->hitbox.y;
+    int16_t top = entity->world_y + entity->hitbox.y + dy;
 
     int16_t bottom = top + entity->hitbox.height - 1;
-
-
-    switch(entity->direction) {
-
-    case DIR_UP:
-        top -= entity->speed;
-        break;
-
-    case DIR_DOWN:
-        bottom += entity->speed;
-        break;
-
-    case DIR_LEFT:
-        left -= entity->speed;
-        break;
-
-    case DIR_RIGHT:
-        right += entity->speed;
-        break;
-
-    case DIR_UP_LEFT:
-        /* Match the unscaled diagonal step in player_update(). */
-        left -= entity->speed;
-        top -= entity->speed;
-        break;
-
-    case DIR_DOWN_LEFT:
-        left -= entity->speed;
-        bottom += entity->speed;
-        break;
-
-    case DIR_UP_RIGHT:
-        right += entity->speed;
-        top -= entity->speed;
-        break;
-
-    case DIR_DOWN_RIGHT:
-        right += entity->speed;
-        bottom += entity->speed;
-        break;
-
-    }
 
     if (left < 0 || top < 0 ||
         right >= WORLD_TILES_WORLDMAP_MAP_TOTAL_X || bottom >= WORLD_TILES_WORLDMAP_MAP_TOTAL_Y) {
@@ -157,9 +76,11 @@ uint8_t collision_check_object(Entity *entity, GameObject *objects)
             {
                 entity->collision_on = true;
             }
-            return i;
+            // Keep checking: a pickup must not hide another solid object.
+            if (index == 255)
+                index = i;
         }
     }
 
-    return 255;
+    return index;
 }

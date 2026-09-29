@@ -17,6 +17,13 @@ class OplVoiceTests(unittest.TestCase):
         source = source.replace('#include "../xram.h"', '''
 #define XRAM_OPL 0
 static struct { unsigned addr1; unsigned char rw1; } RIA;
+static int test_opl_setup(unsigned address)
+{
+    unsigned i;
+    for (i = 0; i < 256; ++i) test_registers[i] = 0;
+    return address == XRAM_OPL ? 0 : -1;
+}
+#define xreg_ria_opl test_opl_setup
 ''')
         source = source.replace('RIA.rw1 = value;',
                                 'RIA.rw1 = value; test_registers[reg] = value;')
@@ -27,6 +34,20 @@ int main(void)
 {
     unsigned i;
     sound_init();
+    assert(test_registers[0x01] == 0x20);
+    /* Exhaustive check against the two reserved channels' register map. */
+    for (i = 0; i < 256; ++i)
+    {
+        unsigned char expected =
+            i == 0x31 || i == 0x34 || i == 0x32 || i == 0x35 ||
+            i == 0x51 || i == 0x54 || i == 0x52 || i == 0x55 ||
+            i == 0x71 || i == 0x74 || i == 0x72 || i == 0x75 ||
+            i == 0x91 || i == 0x94 || i == 0x92 || i == 0x95 ||
+            i == 0xF1 || i == 0xF4 || i == 0xF2 || i == 0xF5 ||
+            i == 0xA7 || i == 0xB7 || i == 0xC7 ||
+            i == 0xA8 || i == 0xB8 || i == 0xC8;
+        assert(is_sfx_register((unsigned char)i) == expected);
+    }
     sound_play(SFX_NONE);
     assert(voices[0].sound == SFX_NONE);
     sound_play(SFX_DOOR);

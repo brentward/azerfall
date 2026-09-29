@@ -8,17 +8,17 @@
 #include "../graphics/graphics.h"
 #include "../game/player.h"
 
-static ScreenPosition get_screen_position(GameObject *obj, Player *player);
+static screen_position_t get_screen_position(object_t *obj, player_t *player);
 
-void init_chest(GameObject *chest, Player *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
+void init_chest(object_t *chest, player_t *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
 {
-    Entity *entity = &player->entity;
-    ScreenPosition screen_position;
+    entity_t *entity = &player->entity;
+    screen_position_t screen_position;
 
 
-    HitBox *hitbox;
-    ObjectType *type;
-    ObjectState *state;
+    hitbox_t *hitbox;
+    object_type_t *type;
+    object_state_t *state;
     memset(chest, 0, sizeof *chest);
     hitbox = &chest->hitbox;
     type = &chest->type;
@@ -43,15 +43,15 @@ void init_chest(GameObject *chest, Player *player, uint8_t config_slot, int16_t 
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_WORLD_PALETTE);
 }
 
-void init_door(GameObject *door, Player *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
+void init_door(object_t *door, player_t *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
 {
-    Entity *entity = &player->entity;
-    ScreenPosition screen_position;
+    entity_t *entity = &player->entity;
+    screen_position_t screen_position;
 
 
-    HitBox *hitbox;
-    ObjectType *type;
-    ObjectState *state;
+    hitbox_t *hitbox;
+    object_type_t *type;
+    object_state_t *state;
     memset(door, 0, sizeof *door);
     hitbox = &door->hitbox;
     type = &door->type;
@@ -76,14 +76,14 @@ void init_door(GameObject *door, Player *player, uint8_t config_slot, int16_t wo
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_WORLD_PALETTE);
 }
 
-void init_key(GameObject *key, Player *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
+void init_key(object_t *key, player_t *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
 {
-    Entity *entity = &player->entity;
-    ScreenPosition screen_position;
+    entity_t *entity = &player->entity;
+    screen_position_t screen_position;
 
-    HitBox *hitbox;
-    ObjectType *type;
-    ObjectState *state;
+    hitbox_t *hitbox;
+    object_type_t *type;
+    object_state_t *state;
     memset(key, 0, sizeof *key);
     hitbox = &key->hitbox;
     type = &key->type;
@@ -109,10 +109,10 @@ void init_key(GameObject *key, Player *player, uint8_t config_slot, int16_t worl
 
 }
 
-static ScreenPosition get_screen_position(GameObject *obj, Player *player)
+static screen_position_t get_screen_position(object_t *obj, player_t *player)
 {
-    ScreenPosition screen_position;
-    Entity *entity = &player->entity;
+    screen_position_t screen_position;
+    entity_t *entity = &player->entity;
 
     screen_position.screen_x = obj->world_x - entity->world_x + PLAYER_SCREEN_X;
     screen_position.screen_y = obj->world_y - entity->world_y + PLAYER_SCREEN_Y;
@@ -132,9 +132,9 @@ void object_sprite_init(void)
     }
 }
 
-void object_prepare_draw(GameObject *obj, Player *player)
+void object_prepare_draw(object_t *obj, player_t *player)
 {
-    ScreenPosition screen_position;
+    screen_position_t screen_position;
     screen_position = get_screen_position(obj, player);
 
     obj->screen_x = screen_position.screen_x;
@@ -143,7 +143,7 @@ void object_prepare_draw(GameObject *obj, Player *player)
 }
 
 
-void object_draw(GameObject *obj, uint8_t config_slot)
+void object_draw(object_t *obj, uint8_t config_slot)
 {    
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, obj->screen_x);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, obj->screen_y);

@@ -9,7 +9,7 @@ typedef struct {
     int16_t y;
     uint8_t width;
     uint8_t height;
-} HitBox;
+} hitbox_t;
 
 typedef enum {
     DIR_DOWN,
@@ -20,14 +20,14 @@ typedef enum {
     DIR_UP_RIGHT,
     DIR_RIGHT,
     DIR_DOWN_RIGHT
-} Direction;
+} direction_t;
 
 typedef struct {
     int16_t world_x;
     int16_t world_y;
 
     uint8_t speed;
-    Direction direction;
+    direction_t direction;
     bool collision_on;
 
     uint8_t animation_frame;
@@ -35,7 +35,7 @@ typedef struct {
     uint16_t xram_sprite_ptr;
 
 
-    HitBox hitbox;
-} Entity;
+    hitbox_t hitbox;
+} entity_t;
 
 #endif // ENTITY_H

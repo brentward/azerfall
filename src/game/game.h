@@ -34,18 +34,20 @@ typedef enum {
     GAME_STATE_SLEEP,
     GAME_STATE_MAP,
     GAME_STATE_CUTSCENE
-} GameState;
+} game_state_t;
 
 typedef struct {
-    GameState state;
+    game_state_t state;
     uint16_t song_xram_ptr;
     uint16_t song_delay;
     uint16_t song_size;
+    uint16_t song_loop_offset;
     uint16_t song_bytes_remaining; /* Zero when unloaded or stopped. */
-} Game;
+} game_t;
 
 void game_update(void);
 void timed_update(void);
+void audio_update(uint8_t elapsed_frames);
 void game_init(void);
 
 #endif

@@ -18,24 +18,22 @@ typedef enum {
     PLAYER_WALKING,
     PLAYER_ATTACKING,
     PLAYER_DYING
-} PlayerState;
+} player_state_t;
 
 
-typedef struct Player {
-    Entity entity;
-    PlayerState state;
+typedef struct player_t {
+    entity_t entity;
+    player_state_t state;
 
     int16_t screen_org_x;
     int16_t screen_org_y;
 
     uint8_t key_count;
-    uint8_t treasure_count;
+} player_t;
 
-} Player;
-
-void player_init(Player *player);
+void player_init(player_t *player);
 void player_graphics_init(void);
-void player_update(Player *player, GameObject objects[OBJECT_COUNT]);
-void player_draw(Player *player);
+void player_update(player_t *player, object_t objects[OBJECT_COUNT]);
+void player_draw(player_t *player);
 
 #endif // PLAYER_H

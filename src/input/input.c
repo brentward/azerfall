@@ -13,7 +13,7 @@
 // final & gives 1 if key is pressed, 0 if not
 #define key(code) (keystates[code >> 3] & (1 << (code & 7)))
 
-InputState input_state = {0};
+input_state_t input_state = {0};
 
 static uint8_t keystates[KEYBOARD_BYTES] = {0};
 static bool pause_was_down = false;

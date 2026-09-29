@@ -14,9 +14,9 @@
 #include "../audio/music.h"
 #include "../audio/sound.h"
 
-static Player player;
-static Game game;
-static GameObject objects[OBJECT_COUNT];
+static player_t player;
+static game_t game;
+static object_t objects[OBJECT_COUNT];
 // static vga_mode5_sprite_t sprite_configs[8];
 
 static void background_upload(void);
@@ -85,11 +85,13 @@ void game_update(void)
         switch (game.state) {
         case GAME_STATE_PLAY:
             game.state = GAME_STATE_PAUSE;
+            music_pause();
             ui_prepare_pause();
             break;
 
         case GAME_STATE_PAUSE:
             game.state = GAME_STATE_PLAY;
+            music_resume();
             ui_clear_pause();
             break;
         }
@@ -116,8 +118,17 @@ void timed_update(void)
     {
         object_draw(&objects[i], i + 1);
     }
-    music_update(&game);
-    sound_update();
+}
+
+void audio_update(uint8_t elapsed_frames)
+{
+    /* BIN delays and SFX envelopes use the 60 Hz clock, not render count. */
+    while (elapsed_frames != 0)
+    {
+        music_update(&game);
+        sound_update();
+        --elapsed_frames;
+    }
 }
 
 static void background_draw(void)
@@ -139,6 +150,14 @@ void game_init(void)
     input_init();
     sound_init();
     music_init(&game, "ROM:Z3LIGHTW.BIN", true);
+    /* Z3LIGHTW: sequence 03, row 00 = frame 424, BIN byte 4116.
+     * Recalculate after re-exporting the song (tools/check_music_loop.py). */
+    if (!music_set_loop_offset(&game, 4116U))
+        puts("Invalid music loop point");
+#ifdef MUSIC_AUDITION
+    /* Keep the final five seconds, then hear the jump to sequence 03. */
+    music_skip_to_frame(&game, 4358U);
+#endif
     // /* Check after all uploads so later initialization overwrites are caught. */
     // verify_background_upload();
 }

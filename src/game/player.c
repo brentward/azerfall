@@ -12,14 +12,14 @@
 #include "../audio/sound.h"
 #include "ui.h"
 
-static void player_animation_update(Player *player);
-static void player_pickup_object(Player *player, GameObject *objects, uint8_t index);
+static void player_animation_update(player_t *player);
+static void player_pickup_object(player_t *player, object_t *objects, uint8_t index);
 
 
-void player_init(Player *player)
+void player_init(player_t *player)
 {
-    Entity *entity;
-    HitBox *hitbox;
+    entity_t *entity;
+    hitbox_t *hitbox;
     memset(player, 0, sizeof *player);
 
     entity = &player->entity;
@@ -68,109 +68,70 @@ void player_graphics_init(void)
     }
 }
 
-void player_update(Player *player, GameObject objects[OBJECT_COUNT])
+void player_update(player_t *player, object_t objects[OBJECT_COUNT])
 {
-    Entity *entity = &player->entity;
-    uint8_t index;
+    entity_t *entity = &player->entity;
+    uint8_t index_x;
+    uint8_t index_y;
+    bool blocked_x;
+    int16_t dx;
+    int16_t dy;
+
+    // Resolve each axis independently so opposing directions cancel.
+    int move_x = input_state.right_pressed - input_state.left_pressed;
+    int move_y = input_state.down_pressed - input_state.up_pressed;
 
     player->state = PLAYER_IDLE;
-    
-    if (input_state.up_pressed && !input_state.down_pressed && !input_state.left_pressed && !input_state.right_pressed)
+    if (move_x != 0 || move_y != 0)
     {
-        entity->direction = DIR_UP;
         player->state = PLAYER_WALKING;
+        if (move_y < 0)
+        {
+            entity->direction = move_x < 0 ? DIR_UP_LEFT :
+                                move_x > 0 ? DIR_UP_RIGHT : DIR_UP;
+        }
+        else if (move_y > 0)
+        {
+            entity->direction = move_x < 0 ? DIR_DOWN_LEFT :
+                                move_x > 0 ? DIR_DOWN_RIGHT : DIR_DOWN;
+        }
+        else
+        {
+            entity->direction = move_x < 0 ? DIR_LEFT : DIR_RIGHT;
+        }
     }
-    if (!input_state.up_pressed && input_state.down_pressed && !input_state.left_pressed && !input_state.right_pressed)
-    {
-        entity->direction = DIR_DOWN;
-        player->state = PLAYER_WALKING;
-    }
-    if (!input_state.up_pressed && !input_state.down_pressed && input_state.left_pressed && !input_state.right_pressed)
-    {
-        entity->direction = DIR_LEFT;
-        player->state = PLAYER_WALKING;
-    }
-    if (!input_state.up_pressed && !input_state.down_pressed && !input_state.left_pressed && input_state.right_pressed)
-    {
-        entity->direction = DIR_RIGHT;
-        player->state = PLAYER_WALKING;
-    }
-    if (input_state.up_pressed && !input_state.down_pressed && input_state.left_pressed && !input_state.right_pressed)
-    {
-        entity->direction = DIR_UP_LEFT;
-        player->state = PLAYER_WALKING;
-    }
-    if (!input_state.up_pressed && input_state.down_pressed && input_state.left_pressed && !input_state.right_pressed)
-    {
-        entity->direction = DIR_DOWN_LEFT;
-        player->state = PLAYER_WALKING;
-    }
-    if (input_state.up_pressed && !input_state.down_pressed && !input_state.left_pressed && input_state.right_pressed)
-    {
-        entity->direction = DIR_UP_RIGHT;
-        player->state = PLAYER_WALKING;
-    }
-    if (!input_state.up_pressed && input_state.down_pressed && !input_state.left_pressed && input_state.right_pressed)
-    {
-        entity->direction = DIR_DOWN_RIGHT;
-        player->state = PLAYER_WALKING;
-    }
+    dx = move_x * entity->speed;
+    dy = move_y * entity->speed;
+
+    // Move X first, then test Y from the resulting position.
+    // Keep facing the input direction while sliding along an obstacle.
     entity->collision_on = false;
+    collision_check_tiles(entity, dx, 0);
+    index_x = collision_check_object(entity, objects, dx, 0);
+    blocked_x = entity->collision_on;
+    if (!blocked_x)
+        entity->world_x += dx;
 
-    collision_check_tiles(entity);
+    entity->collision_on = false;
+    collision_check_tiles(entity, 0, dy);
+    index_y = collision_check_object(entity, objects, 0, dy);
+    if (!entity->collision_on)
+        entity->world_y += dy;
+    entity->collision_on = entity->collision_on || blocked_x;
 
-    index = collision_check_object(entity, objects);
+    // Interact even when movement is blocked, but only once per object.
+    player_pickup_object(player, objects, index_x);
+    if (index_y != index_x)
+        player_pickup_object(player, objects, index_y);
 
-    if (player->state == PLAYER_WALKING && !entity->collision_on) {
-        switch (entity->direction) {
-        case DIR_UP:
-            entity->world_y -= entity->speed;
-            break;
-
-        case DIR_DOWN:
-            entity->world_y += entity->speed;
-            break;
-
-        case DIR_LEFT:
-            entity->world_x -= entity->speed;
-            break;
-
-        case DIR_RIGHT:
-            entity->world_x += entity->speed;
-            break;
-
-        case DIR_UP_LEFT:
-            entity->world_x -= entity->speed;
-            entity->world_y -= entity->speed;
-            break;
-
-        case DIR_DOWN_LEFT:
-            entity->world_x -= entity->speed;
-            entity->world_y += entity->speed;
-            break;
-
-        case DIR_UP_RIGHT:
-            entity->world_x += entity->speed;
-            entity->world_y -= entity->speed;
-            break;
-
-        case DIR_DOWN_RIGHT:
-            entity->world_x += entity->speed;
-            entity->world_y += entity->speed;
-            break;
-        } 
-    }
-    player_pickup_object(player, objects, index);
-    
-    
     player_animation_update(player);
 }
 
-static void player_animation_update(Player *player)
+static void player_animation_update(player_t *player)
 {
     // Update player animation based on state and direction
     // This is a placeholder for actual animation logic
-    Entity *entity = &player->entity;
+    entity_t *entity = &player->entity;
     int sprite_index = entity->direction * 4;
 
     entity->animation_timer++;
@@ -197,18 +158,15 @@ static void player_animation_update(Player *player)
     entity->xram_sprite_ptr =  XRAM_PLAYER_IMAGES + sprite_index * BYTES_PER_SPRITE;
 }
 
-static void player_pickup_object(Player *player, GameObject *objects, uint8_t index)
+static void player_pickup_object(player_t *player, object_t *objects, uint8_t index)
 {
     if (index != 255)
     {
         switch (objects[index].type) {
             case OBJECT_CHEST:
-                if (player->treasure_count == 0)
+                if (objects[index].state == CHEST_CLOSED)
                 {
-                    player->treasure_count++;
                     objects[index].state = CHEST_OPEN;
-                    puts("Gold: 500");
-                    puts("You win!");
                 }
     
                 break;
@@ -242,9 +200,9 @@ static void player_pickup_object(Player *player, GameObject *objects, uint8_t in
     }
 }
 
-void player_draw(Player *player)
+void player_draw(player_t *player)
 {
-    Entity *entity = &player->entity;
+    entity_t *entity = &player->entity;
 
     xram0_struct_set(XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), vga_mode5_sprite_t, xram_sprite_ptr, entity->xram_sprite_ptr);
 }
