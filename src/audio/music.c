@@ -42,8 +42,8 @@ static void read_packet(uint16_t address, uint8_t *buf)
     uint8_t i;
     RIA.addr1 = address;
     RIA.step1 = 1;
-    for (i = 0; i < SONG_PACKET_SIZE; ++i)
-        buf[i] = RIA.rw1;
+    for (i = 0; i < SONG_PACKET_SIZE; ++i, ++buf)
+        *buf = RIA.rw1;
 }
 
 static void write_music_register(uint8_t reg, uint8_t value)
@@ -58,13 +58,15 @@ static void write_music_register(uint8_t reg, uint8_t value)
 static void restore_music_registers(const uint8_t *registers, uint8_t replaced_keys)
 {
     unsigned reg;
+    const uint8_t *value = registers;
     /* Restore patches/pitches before key-on; never touch SFX channels. */
-    for (reg = 0; reg < 256; ++reg)
+    for (reg = 0; reg < 256; ++reg, ++value)
         if (reg < 0xB0 || reg > 0xB8)
-            write_music_register((uint8_t)reg, registers[reg]);
-    for (reg = 0xB0; reg <= 0xB6; ++reg)
+            write_music_register((uint8_t)reg, *value);
+    value = registers + 0xB0;
+    for (reg = 0xB0; reg <= 0xB6; ++reg, ++value)
         if (!(replaced_keys & (1U << (reg - 0xB0))))
-            write_music_register((uint8_t)reg, registers[reg]);
+            write_music_register((uint8_t)reg, *value);
 }
 
 static void music_stop(game_t *game)
@@ -149,6 +151,7 @@ bool music_set_loop_offset(game_t *game, uint16_t offset)
 {
     uint16_t pos;
     unsigned reg;
+    uint8_t *value = loop_registers;
     uint8_t buf[SONG_PACKET_SIZE];
     bool has_delay = false;
 
@@ -166,8 +169,8 @@ bool music_set_loop_offset(game_t *game, uint16_t offset)
     }
     if (!has_delay || offset >= pos || pos + SONG_PACKET_SIZE > game->song_size)
         return false;
-    for (reg = 0; reg < 256; ++reg)
-        loop_registers[reg] = 0;
+    for (reg = 0; reg < 256; ++reg, ++value)
+        *value = 0;
     for (pos = 0; pos < offset; pos += SONG_PACKET_SIZE)
     {
         read_packet(XRAM_SONG_DATA + pos, buf);
@@ -195,14 +198,15 @@ void music_skip_to_frame(game_t *game, uint16_t frame)
     uint8_t buf[SONG_PACKET_SIZE];
     /* cc65 cannot address a 256-byte automatic array on its software stack. */
     static uint8_t registers[256];
+    uint8_t *value = registers;
     unsigned reg;
     uint16_t delay;
 
     /* Call immediately after loading/configuring the loop, before playback. */
     if (frame == 0 || game->song_bytes_remaining == 0)
         return;
-    for (reg = 0; reg < 256; ++reg)
-        registers[reg] = 0;
+    for (reg = 0; reg < 256; ++reg, ++value)
+        *value = 0;
     while (frame != 0 && game->song_bytes_remaining >= SONG_PACKET_SIZE)
     {
         read_packet(game->song_xram_ptr, buf);
@@ -274,25 +278,27 @@ void music_update(game_t *game)
 void music_pause(void)
 {
     uint8_t i;
+    const uint8_t *volume_reg = music_volume_regs;
+    uint8_t *volume = saved_music_volumes;
 
     /* Don't overwrite our saved volumes if already paused. */
     if (music_paused)
         return;
 
-    for (i = 0; i < 14; ++i)
+    for (i = 0; i < 14; ++i, ++volume_reg, ++volume)
     {
         /* Read the current volume byte from the OPL XRAM buffer.
          * A zero step keeps the address unchanged after reading.
          */
         RIA.step1 = 0;
-        RIA.addr1 = XRAM_OPL + music_volume_regs[i];
-        saved_music_volumes[i] = RIA.rw1;
+        RIA.addr1 = XRAM_OPL + *volume_reg;
+        *volume = RIA.rw1;
 
         /* Lower six bits control attenuation:
          * 0 = loudest, 63 = quietest.
          * OR preserves the upper two bits.
          */
-        RIA.rw1 = saved_music_volumes[i] | 0x3F;
+        RIA.rw1 = *volume | 0x3F;
     }
 
     music_paused = true;
@@ -301,15 +307,17 @@ void music_pause(void)
 void music_resume(void)
 {
     uint8_t i;
+    const uint8_t *volume_reg = music_volume_regs;
+    uint8_t *volume = saved_music_volumes;
 
     if (!music_paused)
         return;
 
-    for (i = 0; i < 14; ++i)
+    for (i = 0; i < 14; ++i, ++volume_reg, ++volume)
     {
         RIA.step1 = 0;
-        RIA.addr1 = XRAM_OPL + music_volume_regs[i];
-        RIA.rw1 = saved_music_volumes[i];
+        RIA.addr1 = XRAM_OPL + *volume_reg;
+        RIA.rw1 = *volume;
     }
 
     music_paused = false;

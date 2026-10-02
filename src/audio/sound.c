@@ -111,10 +111,11 @@ static void opl_set_pitch(uint16_t fnum, uint8_t block, uint8_t key_on, uint8_t 
 void sound_play(sfx_id_t sound)
 {
     uint8_t i;
+    sfx_voice_t *voice = voices;
 
-    for (i = 0; i < SFX_CHANNEL_COUNT; i++)
+    for (i = 0; i < SFX_CHANNEL_COUNT; i++, voice++)
     {
-        if (voices[i].sound == SFX_NONE)
+        if (voice->sound == SFX_NONE)
         {
             break;
         }
@@ -127,19 +128,19 @@ void sound_play(sfx_id_t sound)
     switch (sound)
     {
         case SFX_DOOR:
-            voices[i].sound = SFX_DOOR;
-            voices[i].frame = 0;
-            voices[i].delay = 0;
+            voice->sound = SFX_DOOR;
+            voice->frame = 0;
+            voice->delay = 0;
             break;
 
         case SFX_PICKUP:
-            voices[i].sound = SFX_PICKUP;
-            voices[i].frame = 0;
-            voices[i].delay = 0;
+            voice->sound = SFX_PICKUP;
+            voice->frame = 0;
+            voice->delay = 0;
             break;
 
         default:
-            voices[i].sound = SFX_NONE;
+            voice->sound = SFX_NONE;
             break;
     }
 }
@@ -147,83 +148,84 @@ void sound_play(sfx_id_t sound)
 void sound_update(void)
 {
     uint8_t i;
+    sfx_voice_t *voice = voices;
 
-    for (i = 0; i < SFX_CHANNEL_COUNT; i++)
+    for (i = 0; i < SFX_CHANNEL_COUNT; i++, voice++)
     {
-        if (voices[i].sound == SFX_NONE)
+        if (voice->sound == SFX_NONE)
             continue;
 
-        if (voices[i].delay > 0)
+        if (voice->delay > 0)
         {
-            --voices[i].delay;
+            --voice->delay;
             continue;
         }
 
-        switch (voices[i].sound)
+        switch (voice->sound)
         {
             case SFX_DOOR:
-                if (voices[i].frame == 0)
+                if (voice->frame == 0)
                 {
                     opl_set_pitch(DOOR_FNUM, DOOR_BLOCK, 0, i);
                 }
-                else if (voices[i].frame <= DOOR_FRAMES)
+                else if (voice->frame <= DOOR_FRAMES)
                 {
-                    if (voices[i].frame == 1)
+                    if (voice->frame == 1)
                     {
                         door_patch(i);
                         opl_set_pitch(DOOR_FNUM, DOOR_BLOCK, 1, i);
                     }
                     /* Envelope index 0 starts on the same update as key-on. */
-                    opl_write(0x54 + i, door_level[voices[i].frame - 1]);
+                    opl_write(0x54 + i, door_level[voice->frame - 1]);
                     opl_write(0x51 + i,
-                              DOOR_MOD_LEVEL + mod_attenuation[(voices[i].frame - 1) >> 1]);
+                              DOOR_MOD_LEVEL + mod_attenuation[(voice->frame - 1) >> 1]);
                 }
                 else
                 {
                     opl_set_pitch(DOOR_FNUM, DOOR_BLOCK, 0, i);
-                    voices[i].sound = SFX_NONE;
+                    voice->sound = SFX_NONE;
                     continue;
                 }
-                ++voices[i].frame;
+                ++voice->frame;
                 /* One update per frame: no extra skipped updates. */
                 break;
             case SFX_PICKUP:
-                switch (voices[i].frame)
+                switch (voice->frame)
                 {
                     case 0:
                         opl_set_pitch(PICKUP_LOW_FNUM, PICKUP_BLOCK, 0, i);
                         /* Next update is one frame later; skip no updates. */
-                        voices[i].delay = 0;
+                        voice->delay = 0;
                         break;
 
                     case 1:
                         pickup_patch(i);
                         opl_set_pitch(PICKUP_LOW_FNUM, PICKUP_BLOCK, 1, i);
-                        voices[i].delay = PICKUP_FIRST_FRAMES - 1;
+                        voice->delay = PICKUP_FIRST_FRAMES - 1;
                         break;
 
                     case 2:
                         opl_set_pitch(PICKUP_HIGH_FNUM, PICKUP_BLOCK, 1, i);
-                        voices[i].delay = PICKUP_HOLD_FRAMES - 1;
+                        voice->delay = PICKUP_HOLD_FRAMES - 1;
                         break;
 
                     default:
                         /* Steps 3..38 apply fade levels 1..36, one per frame.
                          * Keep key-on and the modulator unchanged during fade. */
-                        if (voices[i].frame < 3 + PICKUP_FADE_FRAMES)
+                        if (voice->frame < 3 + PICKUP_FADE_FRAMES)
                         {
-                            opl_write(0x54 + i, PICKUP_LEVEL + voices[i].frame - 2);
+                            opl_write(0x54 + i, PICKUP_LEVEL + voice->frame - 2);
                             break;
                         }
                         opl_set_pitch(PICKUP_HIGH_FNUM, PICKUP_BLOCK, 0, i);
-                        voices[i].sound = SFX_NONE;
+                        voice->sound = SFX_NONE;
                         continue;
                 }
-                ++voices[i].frame;
+                ++voice->frame;
                 break;
 
             default:
-                voices[i].sound = SFX_NONE;
+                voice->sound = SFX_NONE;
                 break;
         }
     }
@@ -253,6 +255,7 @@ bool is_sfx_register(uint8_t reg)
 void sound_init(void)
 {
     uint8_t i;
+    sfx_voice_t *voice = voices;
     /* Enabling OPL resets the chip AND its XRAM register page. Configure
      * it once here, before writing the shared settings or any patches. */
     if (xreg_ria_opl(XRAM_OPL) < 0)
@@ -267,10 +270,10 @@ void sound_init(void)
     opl_write(0xB7, 0x00);
     opl_write(0xB8, 0x00);
     
-    for (i = 0; i < SFX_CHANNEL_COUNT; i++)
+    for (i = 0; i < SFX_CHANNEL_COUNT; i++, voice++)
     {
-        voices[i].sound = SFX_NONE;
-        voices[i].frame = 0;
-        voices[i].delay = 0;
+        voice->sound = SFX_NONE;
+        voice->frame = 0;
+        voice->delay = 0;
     }
 }

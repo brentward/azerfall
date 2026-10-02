@@ -5,7 +5,8 @@
 #include "../src/game/game.h"
 
 static uint8_t wall_mode;
-static GameObject objects[OBJECT_COUNT];
+static object_t objects[OBJECT_COUNT];
+static entity_t npcs[NPC_COUNT];
 
 uint8_t map_tile_is_solid(uint16_t col, uint16_t row)
 {
@@ -15,7 +16,7 @@ uint8_t map_tile_is_solid(uint16_t col, uint16_t row)
     return 0;
 }
 
-static void step(Entity *e, int16_t dx, int16_t dy)
+static void step(entity_t *e, int16_t dx, int16_t dy)
 {
     e->collision_on = false;
     collision_check_tiles(e, dx, 0);
@@ -29,7 +30,7 @@ static void step(Entity *e, int16_t dx, int16_t dy)
 
 int main(void)
 {
-    Entity e;
+    entity_t e;
     uint8_t i;
     memset(&e, 0, sizeof e);
     memset(objects, 0, sizeof objects);
@@ -67,6 +68,34 @@ int main(void)
     assert(e.collision_on);
     step(&e, 1, 1);
     assert(e.world_x == 15 && e.world_y == 16);
+    /* An NPC must not collide with its own proposed position. */
+    memset(npcs, 0, sizeof npcs);
+    npcs[0].world_x = npcs[0].world_y = 32;
+    npcs[0].hitbox.width = npcs[0].hitbox.height = 16;
+    assert(collision_check_entities(&npcs[0], npcs, 1, 0) == 255);
+    assert(!npcs[0].collision_on);
+
+    /* Other NPCs still block movement, including the final array slot. */
+    npcs[NPC_COUNT - 1] = npcs[0];
+    npcs[NPC_COUNT - 1].world_x = 48;
+    assert(collision_check_entities(&npcs[0], npcs, 1, 0) == NPC_COUNT - 1);
+    assert(npcs[0].collision_on);
+    npcs[0].collision_on = false;
+    assert(collision_check_entities(&npcs[0], npcs, 0, 0) == 255);
+    assert(!npcs[0].collision_on);
+
+    /* The player is external to the array and must collide with NPCs. */
+    e = npcs[0];
+    e.collision_on = false;
+    assert(collision_check_entities(&e, npcs, 0, 0) == 0);
+    assert(e.collision_on);
+
+    /* Zero-sized unused slots are ignored, even inside the hitbox. */
+    memset(npcs, 0, sizeof npcs);
+    npcs[1].world_x = npcs[1].world_y = 40;
+    e.collision_on = false;
+    assert(collision_check_entities(&e, npcs, 0, 0) == 255);
+    assert(!e.collision_on);
     puts("Collision checks passed");
     return 0;
 }

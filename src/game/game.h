@@ -2,6 +2,7 @@
 #define GAME_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // Screen Settings
 #define SCREEN_WIDTH        320
@@ -18,8 +19,6 @@
 #define WORLD_HEIGHT_TILES 50
 
 #define BYTES_PER_SPRITE 128
-
-#define OBJECT_COUNT 7
 
 typedef enum {
     GAME_STATE_TITLE_SCREEN,
@@ -43,11 +42,15 @@ typedef struct {
     uint16_t song_size;
     uint16_t song_loop_offset;
     uint16_t song_bytes_remaining; /* Zero when unloaded or stopped. */
+    uint8_t background_animation_timer;
+    bool srand_init;
+    uint16_t skipped_frames;
 } game_t;
 
 void game_update(void);
-void timed_update(void);
+void timed_update();
 void audio_update(uint8_t elapsed_frames);
 void game_init(void);
+void game_state_set(game_state_t new_state);
 
 #endif

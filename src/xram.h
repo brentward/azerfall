@@ -11,6 +11,7 @@
 #include "../generated/world_tiles_worldmap_map.h"
 #include "../generated/player_sprites.h"
 #include "../generated/object_sprites.h"
+#include "../generated/npc_sprites.h"
 
 /* Insert xram.h snippets from docs to build your system. */
 /* https://picocomputer.github.io/sdk.html#xram-memory-map */
@@ -60,12 +61,12 @@
 #define UI_PAUSE_X_POS_PX ((SCREEN_WIDTH / 2) - (UI_PAUSE_WIDTH_CHAR * 8 / 2))
 #define UI_PAUSE_Y_POS_PX (UI_PAUSE_SCANLINE_START)
 
-#define UI_MESSAGE_WIDTH_CHAR 40
+#define UI_MESSAGE_WIDTH_CHAR 24
 #define UI_MESSAGE_HEIGHT_CHAR 5
 #define UI_MESSAGE_SIZE (UI_MESSAGE_WIDTH_CHAR * UI_MESSAGE_HEIGHT_CHAR)
 #define UI_MESSAGE_SCANLINE_START 116
 #define UI_MESSAGE_SCANLINE_END (UI_MESSAGE_SCANLINE_START + (UI_MESSAGE_HEIGHT_CHAR * 8))
-#define UI_MESSAGE_X_POS_PX 0
+#define UI_MESSAGE_X_POS_PX ((40 - UI_MESSAGE_WIDTH_CHAR) * 8 / 2)
 #define UI_MESSAGE_Y_POS_PX (UI_MESSAGE_SCANLINE_START)
 
 #define UI_LOWER_WIDTH_CHAR 40
@@ -101,6 +102,11 @@
 #define MODE5_512X512 0x30
 
 #define SPRITE_LIMIT   32U
+
+#define OBJECT_COUNT 7
+#define NPC_COUNT 4
+#define TOTAL_SPRITE_COUNT (1 + OBJECT_COUNT + NPC_COUNT) /* Player + objects + NPCs */
+
 
 #define COLOR_FROM_RGB8(r, g, b) \
     ((((unsigned)(b) >> 3) << 11) | (((unsigned)(g) >> 3) << 6) | ((unsigned)(r) >> 3))
@@ -290,12 +296,14 @@ typedef struct
         world_tiles[WORLD_TILES_TILE_COUNT];
     MODE5_IMAGE(PLAYER_SPRITES_BPP, PLAYER_SPRITES_WIDTH) player_images[PLAYER_SPRITES_COUNT];
     MODE5_IMAGE(OBJECT_SPRITES_BPP, OBJECT_SPRITES_WIDTH) object_images[OBJECT_SPRITES_COUNT];
+    MODE5_IMAGE(NPC_SPRITES_BPP, NPC_SPRITES_WIDTH) npc_images[NPC_SPRITES_COUNT];
     uint8_t song_data[SONG_DATA_MAX_BYTES];
     mode1_4bpp_data_t ui_upper[UI_UPPER_SIZE];
     mode1_4bpp_data_t ui_pause[UI_PAUSE_SIZE];
     mode1_4bpp_data_t ui_message[UI_MESSAGE_SIZE];
     mode1_4bpp_data_t ui_lower[UI_LOWER_SIZE];
     uint16_t world_palette[1 << WORLD_TILES_BPP];
+    uint16_t npc_palette[1 << NPC_SPRITES_BPP];
     mode5_sprite_t sprite_configs[SPRITE_LIMIT];
     mode1_config_t ui_upper_config;
     mode1_config_t ui_pause_config;
@@ -317,8 +325,10 @@ typedef struct
 #define XRAM_WORLD_TILES offsetof(xram_layout_t, world_tiles)
 #define XRAM_PLAYER_IMAGES offsetof(xram_layout_t, player_images)
 #define XRAM_OBJECT_IMAGES offsetof(xram_layout_t, object_images)
+#define XRAM_NPC_IMAGES offsetof(xram_layout_t, npc_images)
 #define XRAM_SONG_DATA offsetof(xram_layout_t, song_data)
 #define XRAM_WORLD_PALETTE offsetof(xram_layout_t, world_palette)
+#define XRAM_NPC_PALETTE offsetof(xram_layout_t, npc_palette)
 #define XRAM_UI_UPPER offsetof(xram_layout_t, ui_upper)
 #define XRAM_UI_PAUSE offsetof(xram_layout_t, ui_pause)
 #define XRAM_UI_MESSAGE offsetof(xram_layout_t, ui_message)

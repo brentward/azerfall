@@ -37,6 +37,17 @@
             }
         },
         {
+            "name": "cc65/RelWithDebInfo",
+            "displayName": "cc65/RelWithDebInfo",
+            "description": "The same, optimized, with debug information for the perf testing.",
+            "inherits": "base",
+            "binaryDir": "${sourceDir}/build/cc65/relwithdebinfo",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CC65_TARGET_SYSTEM": "rp6502"
+            }
+        },
+        {
             "name": "llvm-mos/Debug",
             "displayName": "llvm-mos/Debug",
             "description": "Build with llvm-mos. Debug information, needed for source-level debugging.",
@@ -70,6 +81,12 @@
             "name": "cc65/Release",
             "displayName": "cc65/Release",
             "configurePreset": "cc65/Release",
+            "targets": ["all"]
+        },
+        {
+            "name": "cc65/RelWithDebInfo",
+            "displayName": "cc65/RelWithDebInfo",
+            "configurePreset": "cc65/RelWithDebInfo",
             "targets": ["all"]
         },
         {

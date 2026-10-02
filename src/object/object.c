@@ -6,7 +6,7 @@
 
 #include "../xram.h"
 #include "../graphics/graphics.h"
-#include "../game/player.h"
+#include "../entity/player.h"
 
 static screen_position_t get_screen_position(object_t *obj, player_t *player);
 
@@ -14,11 +14,10 @@ void init_chest(object_t *chest, player_t *player, uint8_t config_slot, int16_t 
 {
     entity_t *entity = &player->entity;
     screen_position_t screen_position;
-
-
     hitbox_t *hitbox;
     object_type_t *type;
     object_state_t *state;
+
     memset(chest, 0, sizeof *chest);
     hitbox = &chest->hitbox;
     type = &chest->type;
@@ -33,7 +32,7 @@ void init_chest(object_t *chest, player_t *player, uint8_t config_slot, int16_t 
     chest->world_y = world_y;
     chest->collision = false;
     chest->xram_sprite_ptr = XRAM_OBJECT_IMAGES + chest->state * BYTES_PER_SPRITE;
-    screen_position = get_screen_position(chest, player);
+    screen_position = get_screen_position_object(chest, player);
     chest->screen_x = screen_position.screen_x;
     chest->screen_y = screen_position.screen_y;
 
@@ -47,11 +46,10 @@ void init_door(object_t *door, player_t *player, uint8_t config_slot, int16_t wo
 {
     entity_t *entity = &player->entity;
     screen_position_t screen_position;
-
-
     hitbox_t *hitbox;
     object_type_t *type;
     object_state_t *state;
+
     memset(door, 0, sizeof *door);
     hitbox = &door->hitbox;
     type = &door->type;
@@ -66,7 +64,7 @@ void init_door(object_t *door, player_t *player, uint8_t config_slot, int16_t wo
     door->world_y = world_y;
     door->collision = true;
     door->xram_sprite_ptr = XRAM_OBJECT_IMAGES + door->state * BYTES_PER_SPRITE;
-    screen_position = get_screen_position(door, player);
+    screen_position = get_screen_position_object(door, player);
     door->screen_x = screen_position.screen_x;
     door->screen_y = screen_position.screen_y;
 
@@ -80,10 +78,10 @@ void init_key(object_t *key, player_t *player, uint8_t config_slot, int16_t worl
 {
     entity_t *entity = &player->entity;
     screen_position_t screen_position;
-
     hitbox_t *hitbox;
     object_type_t *type;
     object_state_t *state;
+
     memset(key, 0, sizeof *key);
     hitbox = &key->hitbox;
     type = &key->type;
@@ -98,7 +96,7 @@ void init_key(object_t *key, player_t *player, uint8_t config_slot, int16_t worl
     key->world_y = world_y;
     key->collision = false;
     key->xram_sprite_ptr = XRAM_OBJECT_IMAGES + key->state * BYTES_PER_SPRITE;
-    screen_position = get_screen_position(key, player);
+    screen_position = get_screen_position_object(key, player);
     key->screen_x = screen_position.screen_x;
     key->screen_y = screen_position.screen_y;
 
@@ -109,33 +107,23 @@ void init_key(object_t *key, player_t *player, uint8_t config_slot, int16_t worl
 
 }
 
-static screen_position_t get_screen_position(object_t *obj, player_t *player)
-{
-    screen_position_t screen_position;
-    entity_t *entity = &player->entity;
-
-    screen_position.screen_x = obj->world_x - entity->world_x + PLAYER_SCREEN_X;
-    screen_position.screen_y = obj->world_y - entity->world_y + PLAYER_SCREEN_Y;
-
-    return screen_position;
-}
-
 void object_sprite_init(void)
 {
     int i;
+    const uint8_t *pixels = object_sprites;
 
     RIA.addr0 = XRAM_OBJECT_IMAGES;
     RIA.step0 = 1;
-    for (i = 0; i < OBJECT_SPRITES_TOTAL_BYTES; i++)
+    for (i = 0; i < OBJECT_SPRITES_TOTAL_BYTES; i++, pixels++)
     {
-        RIA.rw0 = object_sprites[i];
+        RIA.rw0 = *pixels;
     }
 }
 
 void object_prepare_draw(object_t *obj, player_t *player)
 {
     screen_position_t screen_position;
-    screen_position = get_screen_position(obj, player);
+    screen_position = get_screen_position_object(obj, player);
 
     obj->screen_x = screen_position.screen_x;
     obj->screen_y = screen_position.screen_y;

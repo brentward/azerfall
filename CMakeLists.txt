@@ -18,7 +18,7 @@ target_sources(azerfall PRIVATE
     generated/world_tiles_worldmap_map.c
     src/game/game.c
     generated/player_sprites.c
-    src/game/player.c
+    src/entity/player.c
     src/input/input.c
     src/world/collision.c
     src/world/map.c
@@ -27,4 +27,8 @@ target_sources(azerfall PRIVATE
     src/audio/music.c
     src/audio/sound.c
     src/game/ui.c
+    src/entity/npc.c
+    src/entity/entity.c
+    src/graphics/graphics.c
+    generated/npc_sprites.c
 )

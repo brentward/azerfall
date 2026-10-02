@@ -1,6 +1,8 @@
 #include "ui.h"
 
-#include "../game/player.h"
+#include <stdlib.h>
+
+#include "../entity/player.h"
 
 ui_t ui;
 
@@ -64,7 +66,7 @@ void ui_init(void)
     RIA.step0 = 1;
     for (i = 0; i < UI_UPPER_SIZE; i++)
     {
-        c = message[i];
+        c = *message++;
         RIA.rw0 = c;
         RIA.rw0 = MODE1_BG_FG(ANSI_TRANSPARENT, ANSI_BRIGHT_CYAN);
     }
@@ -91,12 +93,12 @@ void ui_init(void)
         RIA.rw0 = 0; // fgbg color index
     }
 
-    message = "Lower UI elements       they can go here";
+    message = "Skipped frames:                         ";
     RIA.addr0 = XRAM_UI_LOWER;
     RIA.step0 = 1;
     for (i = 0; i < UI_LOWER_SIZE; i++)
     {
-        c = message[i];
+        c = *message++;
         RIA.rw0 = c;
         RIA.rw0 = MODE1_BG_FG(ANSI_BRIGHT_BLACK, ANSI_WHITE);
     }
@@ -109,16 +111,17 @@ void ui_init(void)
 
 void ui_show_message(char *message)
 {
-    uint8_t i;
     char c;
 
-    RIA.addr0 = XRAM_UI_MESSAGE + (12 * 2);
+
+    RIA.addr0 = XRAM_UI_MESSAGE;
     RIA.step0 = 1;
-    for (i = 0; i < strlen(message); i++)
+    for (; *message != '\0';)
     {
-        c = message[i];
+        c = *message++;
         RIA.rw0 = c;
         RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+
     }
     // strncpy(ui.message, message, UI_MESSAGE_SIZE - 1);
     // ui.message[UI_MESSAGE_SIZE - 1] = '\0';
@@ -126,6 +129,70 @@ void ui_show_message(char *message)
     ui.message_on = true;
     ui.message_counter = 1;
 }
+
+void ui_show_dialogue(char *dialogue)
+{
+    char c;
+    int i;
+    uint8_t row = 0;
+    uint8_t col = 0;
+
+    /* Dialogue stays visible until explicitly cleared, without a message timer. */
+    ui.message_on = false;
+    ui.message_counter = 0;
+
+    RIA.addr0 = XRAM_UI_MESSAGE;
+    RIA.step0 = 1;
+    for (i = 0; i < UI_MESSAGE_SIZE; i++)
+    {
+        RIA.rw0 = ' '; // data
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+    }
+
+    RIA.addr0 = XRAM_UI_MESSAGE;
+    RIA.step0 = 1;
+    for (; *dialogue != '\0' && row < UI_MESSAGE_HEIGHT_CHAR;)
+    {
+        c = *dialogue++;
+        if (c == '\n')
+        {
+            row++;
+            col = 0;
+            continue;
+        }
+        /* Wrap long lines before writing the next character. */
+        if (col == UI_MESSAGE_WIDTH_CHAR)
+        {
+            row++;
+            col = 0;
+        }
+        if (row >= UI_MESSAGE_HEIGHT_CHAR)
+            break;
+
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+
+}
+
+void ui_clear_dialogue(void)
+{
+    uint8_t i;
+
+    RIA.addr0 = XRAM_UI_MESSAGE;
+    RIA.step0 = 1;
+    for (i = 0; i < UI_MESSAGE_SIZE; i++)
+    {
+        RIA.rw0 = 0; // data
+        RIA.rw0 = 0; // fgbg color index
+    }
+
+}
+
 
 void ui_prepare_pause(void)
 {
@@ -137,7 +204,7 @@ void ui_prepare_pause(void)
     RIA.step0 = 1;
     for (i = 0; i < UI_PAUSE_SIZE; i++)
     {
-        c = message[i];
+        c = *message++;
         RIA.rw0 = c;
         RIA.rw0 = MODE1_BG_FG(ANSI_TRANSPARENT, ANSI_BRIGHT_WHITE);
     }
@@ -155,6 +222,24 @@ void ui_clear_pause(void)
         RIA.rw0 = 0; // fgbg color index
     }
 
+}
+
+void ui_prepare_skipped_frames(game_t *game)
+{
+    char c;
+    char skipped_frames[6];
+    const char *digit = skipped_frames;
+
+    utoa(game->skipped_frames, skipped_frames, 10);
+
+    RIA.addr0 = XRAM_UI_LOWER + (16 * 2);
+    RIA.step0 = 1;
+    for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BRIGHT_BLACK, ANSI_WHITE);
+    }
 }
 
 void ui_prepare_draw(void)

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../game/entity.h"
+#include "../entity/entity.h"
 
 struct player_t;
 
@@ -24,7 +24,7 @@ typedef enum {
 } object_state_t;
 
 
-typedef struct {
+typedef struct object_t {
     object_type_t type;
 
     int16_t world_x;

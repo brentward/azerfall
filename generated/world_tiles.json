@@ -5,8 +5,8 @@
   "tile_width": 16,
   "tile_height": 16,
   "bytes_per_tile": 128,
-  "packed_tile_count": 38,
-  "total_bytes": 4864,
+  "packed_tile_count": 40,
+  "total_bytes": 5120,
   "tiles": {
     "0": {
       "runtime_id": 0,
@@ -197,6 +197,16 @@
       "runtime_id": 37,
       "collision": false,
       "source_index": 37
+    },
+    "38": {
+      "runtime_id": 38,
+      "collision": false,
+      "source_index": 38
+    },
+    "39": {
+      "runtime_id": 39,
+      "collision": true,
+      "source_index": 39
     }
   },
   "maps": [

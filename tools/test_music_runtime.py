@@ -85,7 +85,7 @@ static int read_xram(unsigned address, unsigned count, int fd)
         harness = r'''
 int main(void)
 {
-    Game game;
+    game_t game;
     unsigned i;
     memset(&game, 0, sizeof game);
     sound_init();

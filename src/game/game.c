@@ -7,22 +7,28 @@
 #include <rp6502.h>
 
 #include "../xram.h"
-#include "player.h"
+#include "../entity/player.h"
 #include "ui.h"
 #include "../object/object.h"
 #include "../input/input.h"
 #include "../audio/music.h"
 #include "../audio/sound.h"
+#include "../entity/npc.h"
+
 
 static player_t player;
 static game_t game;
 static object_t objects[OBJECT_COUNT];
+static npc_t npcs[NPC_COUNT];
+
 // static vga_mode5_sprite_t sprite_configs[8];
 
 static void background_upload(void);
+static void background_copy_tile(uint8_t destination, uint8_t source);
 static void background_init(void);
 static void background_draw(void);
 static void set_objects(void);
+static void set_npcs(void);
 
 // /* Startup diagnostic: this reads the RIA's XRAM, not the VGA's replica. */
 // static void verify_background_bytes(const char *label, unsigned address,
@@ -72,7 +78,15 @@ static void set_objects(void);
 void game_update(void)
 {
     uint8_t i;
+    object_t *object;
+    npc_t *npc;
     input_update();
+    if (input_state.srand_seeded && !game.srand_init)
+    {
+        srand(input_state.counter);
+        // srand(1234);
+        game.srand_init = true;
+    }
     if (input_state.background_reload_pressed)
     {
         background_upload();
@@ -97,32 +111,82 @@ void game_update(void)
         }
     }
 
+    if (input_state.interact_pressed)
+    {
+        switch (game.state) {
+        case GAME_STATE_DIALOGUE:
+            game.state = GAME_STATE_PLAY;
+            ui_clear_dialogue();
+            break;
+        }
+    }
+
     if (game.state == GAME_STATE_PLAY)
     {
-        player_update(&player, objects);
-        for (i = 0; i < OBJECT_COUNT; i++)
+        player_update(&player, objects, npcs);
+        for (i = 0, object = objects; i < OBJECT_COUNT; i++, object++)
         {
-            object_prepare_draw(&objects[i], &player);
+            object_prepare_draw(object, &player);
         }
+        for (i = 0, npc = npcs; i < NPC_COUNT; i++, npc++)
+        {
+            entity_t *entity = &npc->entity;
+
+            if (entity->hitbox.width == 0 || entity->hitbox.height == 0)
+                continue;
+            entity_update(entity, &player, objects, npcs);
+            entity_prepare_draw(entity, &player);
+        }
+        ui_prepare_skipped_frames(&game);
         ui_prepare_draw();
     }
 }
 
-void timed_update(void)
+void game_state_set(game_state_t new_state )
+{
+    game.state = new_state;
+}
+
+void timed_update()
 {
     uint8_t i;
+    object_t *object;
+    npc_t *npc;
     background_draw();
     ui_draw();
     player_draw(&player);
-    for (i = 0; i < OBJECT_COUNT; i++)
+    for (i = 0, object = objects; i < OBJECT_COUNT; i++, object++)
     {
-        object_draw(&objects[i], i + 1);
+        object_draw(object, i + 1);
     }
+    for (i = 0, npc = npcs; i < NPC_COUNT; i++, npc++)
+    {
+        if (npc->entity.hitbox.width == 0 || npc->entity.hitbox.height == 0)
+            continue;
+        entity_draw(&npc->entity, i + 8);
+    }
+
+    if (++game.background_animation_timer == 60)
+    {
+        background_copy_tile(2, 38);
+        background_copy_tile(19, 39);
+    }
+    if (game.background_animation_timer == 120)
+    {
+        background_copy_tile(2, 2);
+        background_copy_tile(19, 19);
+        game.background_animation_timer = 0;
+    }
+
 }
 
 void audio_update(uint8_t elapsed_frames)
 {
     /* BIN delays and SFX envelopes use the 60 Hz clock, not render count. */
+    if (elapsed_frames > 1)
+    {
+        game.skipped_frames += elapsed_frames - 1;
+    }
     while (elapsed_frames != 0)
     {
         music_update(&game);
@@ -131,6 +195,7 @@ void audio_update(uint8_t elapsed_frames)
     }
 }
 
+// TODO animate grass by cycling tile 2 with 38 and water 19 with 39
 static void background_draw(void)
 {
     xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, x_pos_px, PLAYER_SCREEN_X - player.entity.world_x);
@@ -143,8 +208,10 @@ void game_init(void)
     game.state = GAME_STATE_PLAY;
     player_init(&player);
     object_sprite_init();
+    npc_sprite_init();
     background_init();
     set_objects();
+    set_npcs();
     player_graphics_init();
     ui_init();
     input_init();
@@ -191,6 +258,8 @@ static void background_init(void)
 static void background_upload(void)
 {
     uint16_t i;
+    const uint8_t *pixels;
+    const uint16_t *palette;
 
     xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, x_wrap, false);
     xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, y_wrap, false);
@@ -204,25 +273,39 @@ static void background_upload(void)
 
     RIA.addr0 = XRAM_WORLD_MAP;
     RIA.step0 = 1;
-    for (i = 0; i < WORLD_TILES_WORLDMAP_MAP_TOTAL_BYTES; i++)
+    for (i = 0, pixels = world_tiles_worldmap_map; i < WORLD_TILES_WORLDMAP_MAP_TOTAL_BYTES; i++, pixels++)
     {
-        RIA.rw0 = world_tiles_worldmap_map[i];
+        RIA.rw0 = *pixels;
     }
 
 
     RIA.addr0 = XRAM_WORLD_TILES;
-    for (i = 0; i < WORLD_TILES_TOTAL_BYTES; i++)
+    for (i = 0, pixels = world_tiles; i < WORLD_TILES_TOTAL_BYTES; i++, pixels++)
     {
-        RIA.rw0 = world_tiles[i];
+        RIA.rw0 = *pixels;
     }
 
     RIA.addr0 = XRAM_WORLD_PALETTE;
-    for (i = 0; i < WORLD_TILES_PALETTE_COUNT; i++)
+    for (i = 0, palette = world_tiles_palette; i < WORLD_TILES_PALETTE_COUNT; i++, palette++)
     {
-        RIA.rw0 = (uint8_t)world_tiles_palette[i];
-        RIA.rw0 = (uint8_t)(world_tiles_palette[i] >> 8);
+        RIA.rw0 = (uint8_t)*palette;
+        RIA.rw0 = (uint8_t)(*palette >> 8);
     }
 
+}
+
+static void background_copy_tile(uint8_t destination, uint8_t source)
+{
+    uint8_t i;
+    const uint8_t *pixels;
+
+    pixels = world_tiles + (uint16_t)source * WORLD_TILES_BYTES_PER_TILE;
+    RIA.addr0 = XRAM_WORLD_TILES
+        + (uint16_t)destination * WORLD_TILES_BYTES_PER_TILE;
+    RIA.step0 = 1;
+
+    for (i = 0; i < WORLD_TILES_BYTES_PER_TILE; ++i, ++pixels)
+        RIA.rw0 = *pixels;
 }
 
 static void set_objects(void)
@@ -234,4 +317,18 @@ static void set_objects(void)
     init_door(&objects[4], &player, 5, 160, 448);
     init_door(&objects[5], &player, 6, 208, 368);
     init_chest(&objects[6], &player, 7, 192, 144);
+}
+
+
+static void set_npcs(void)
+{
+    npc_oldman_init(&npcs[0].entity, &player, 8, 336, 336);
+    npc_oldman_set_dialogue(
+        &npcs[0],
+        "Hello there!",
+        "I am the old man,",
+        "I have lived here\nfor many years.",
+        "It is dangerous\nto go alone!\nTake this."
+    );
+    
 }

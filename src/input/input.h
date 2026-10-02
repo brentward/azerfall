@@ -2,6 +2,7 @@
 #define INPUT_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef struct
 {
@@ -9,8 +10,11 @@ typedef struct
     bool down_pressed;
     bool left_pressed;
     bool right_pressed; 
+    bool interact_pressed; /* New press only; consumed after an NPC interaction. */
     bool pause_pressed;
-    bool background_reload_pressed; // Temporary R-key graphics diagnostic.
+    bool background_reload_pressed;
+    bool srand_seeded;
+    uint16_t counter;
 } input_state_t;
 
 extern input_state_t input_state;

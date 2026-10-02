@@ -18,6 +18,7 @@ input_state_t input_state = {0};
 static uint8_t keystates[KEYBOARD_BYTES] = {0};
 static bool pause_was_down = false;
 static bool reload_was_down = false;
+static bool interact_was_down = false;
 
 void input_init(void)
 {
@@ -25,6 +26,7 @@ void input_init(void)
 
     pause_was_down = false;
     reload_was_down = false;
+    interact_was_down = false;
 
     // Start with no input before enabling live updates from the RIA.
     RIA.addr0 = XRAM_KEYBOARD;
@@ -50,21 +52,25 @@ void input_update(void)
     int bits;
     unsigned char dpad;
     unsigned char sticks;
+    unsigned char action_buttons;
     unsigned char buttons;
+    bool interaction_down = false;
     bool pause_down = false;
     bool reload_down = false;
     int i;
+    uint8_t *key_state = keystates;
 
     input_state.up_pressed = false;
     input_state.down_pressed = false;
     input_state.left_pressed = false;
     input_state.right_pressed = false;
     input_state.pause_pressed = false;
+    input_state.interact_pressed = false;
 
     RIA.addr1 = XRAM_KEYBOARD;
     RIA.step1 = 1;
-    for (i = 0; i < KEYBOARD_BYTES; i++)
-        keystates[i] = RIA.rw1;
+    for (i = 0; i < KEYBOARD_BYTES; i++, key_state++)
+        *key_state = RIA.rw1;
 
     RIA.addr1 = XRAM_GAMEPAD;
     // byte 0 = dpad, byte 1 = sticks: merge for direction
@@ -80,22 +86,22 @@ void input_update(void)
     if ((bits & 0x8) && !(bits & 0x4))
         input_state.right_pressed = true;
     // byte 2 = BTN0: A(0), B(1), X(3), Y(4) for fire
-    // if (RIA.rw1 & 0x1B)
-    //     Input.shoot = true;
-
+    action_buttons = RIA.rw1;
+    interaction_down = (dpad & GAMEPAD_CONNECTED) && (action_buttons & GAMEPAD_BTN0_B);
     // Read BTN1 directly: the commented-out BTN0 read does not advance RIA.
-    RIA.addr1 = XRAM_GAMEPAD + 3;
+    // RIA.addr1 = XRAM_GAMEPAD + 3;
     buttons = RIA.rw1;
     pause_down = (dpad & GAMEPAD_CONNECTED) && (buttons & GAMEPAD_BTN_START);
 
     if (!(keystates[0] & 1)) // any key pressed?
     {
-        
+
         input_state.up_pressed = ((key(KEY_W) || key(KEY_UP)) != 0);
         input_state.down_pressed = ((key(KEY_S) || key(KEY_DOWN)) != 0);
         input_state.left_pressed = ((key(KEY_A) || key(KEY_LEFT)) != 0);
         input_state.right_pressed = ((key(KEY_D) || key(KEY_RIGHT)) != 0);
         pause_down = pause_down || (key(KEY_P) != 0);
+        interaction_down = interaction_down || (key(KEY_E) != 0);
         reload_down = key(KEY_R) != 0;
     }
 
@@ -104,5 +110,21 @@ void input_update(void)
     pause_was_down = pause_down;
     input_state.background_reload_pressed = reload_down && !reload_was_down;
     reload_was_down = reload_down;
+    input_state.interact_pressed = interaction_down && !interact_was_down;
+    interact_was_down = interaction_down;
+
+    if (!input_state.srand_seeded)
+    {
+        if (!input_state.up_pressed && !input_state.down_pressed &&
+            !input_state.left_pressed && !input_state.right_pressed &&
+            !input_state.background_reload_pressed)
+        {
+            input_state.counter++;
+        } else
+        {
+            input_state.srand_seeded = true;
+        }
+
+    }
 
 }
