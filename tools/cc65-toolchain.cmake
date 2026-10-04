@@ -6,8 +6,7 @@ set(CC65_INTELLISENSE_ONLY_DEFINES __fastcall__ __cdecl__)
 # Skip toolchain config when invoked as a `cmake -P` wrapper script.
 if(NOT CMAKE_SCRIPT_MODE_FILE)
 
-# No default: a missing target reaches cl65 as a bare --target and fails
-# somewhere much less helpful than here.
+# Improve error condition.
 if(NOT CC65_TARGET_SYSTEM)
     message(FATAL_ERROR
         "cc65: CC65_TARGET_SYSTEM is not set. Set it before find_package(cc65).")
@@ -23,24 +22,12 @@ set(CC65_C_COMPILER "${CMAKE_C_COMPILER}" CACHE FILEPATH "Real cc65 C compiler")
 
 # Query cc65 for the target define (e.g. __RP6502__).
 file(WRITE "${CMAKE_BINARY_DIR}/_cc65_detect.c" "")
-file(REMOVE "${CMAKE_BINARY_DIR}/_cc65_detect.i")
 execute_process(
-    COMMAND "${CC65_C_COMPILER}" -Wc -dP -t ${CC65_TARGET_SYSTEM}
+    COMMAND ${CC65_C_COMPILER} -Wc -dP -t ${CC65_TARGET_SYSTEM}
             -E -o "${CMAKE_BINARY_DIR}/_cc65_detect.i"
             "${CMAKE_BINARY_DIR}/_cc65_detect.c"
-    RESULT_VARIABLE CC65_DETECT_RESULT
-    OUTPUT_VARIABLE CC65_DETECT_STDOUT
-    ERROR_VARIABLE CC65_DETECT_STDERR
+    ERROR_QUIET
 )
-if(NOT CC65_DETECT_RESULT STREQUAL "0"
-        OR NOT EXISTS "${CMAKE_BINARY_DIR}/_cc65_detect.i")
-    file(REMOVE "${CMAKE_BINARY_DIR}/_cc65_detect.c" "${CMAKE_BINARY_DIR}/_cc65_detect.i")
-    message(FATAL_ERROR
-        "cc65: target detection failed for ${CC65_TARGET_SYSTEM}.\n"
-        "Compiler: ${CC65_C_COMPILER}\n"
-        "Result: ${CC65_DETECT_RESULT}\n"
-        "${CC65_DETECT_STDOUT}${CC65_DETECT_STDERR}")
-endif()
 file(READ "${CMAKE_BINARY_DIR}/_cc65_detect.i" CC65_DEFINE_TARGET)
 file(REMOVE "${CMAKE_BINARY_DIR}/_cc65_detect.c" "${CMAKE_BINARY_DIR}/_cc65_detect.i")
 string(REGEX MATCH "^#define (__[A-Z0-9_]+__) 1" CC65_DEFINE_TARGET "${CC65_DEFINE_TARGET}")
@@ -68,32 +55,41 @@ if(CC65_DEFINE_TARGET)
     add_compile_options("$<$<COMPILE_LANGUAGE:C>:SHELL:-D${CC65_DEFINE_TARGET}=>")
 endif()
 
+# Select the compiler. Each rule below writes this wrapper out in full,
+# because CMAKE_<LANG>_COMPILER_ARG1 cannot hold a quoted path with a space,
+# and a build tree keeps the ARG1 of its first configure, which the
+# <CMAKE_<LANG>_COMPILER> placeholder would add again.
 set(CMAKE_C_COMPILER ${CMAKE_COMMAND})
-set(CMAKE_C_COMPILER_ARG1 "-P ${CMAKE_CURRENT_LIST_FILE} -- ${CC65_C_COMPILER}")
 set(CC65_ASM_COMPILER "${CMAKE_ASM_COMPILER}" CACHE FILEPATH "Real cc65 ASM compiler")
 set(CMAKE_ASM_COMPILER ${CMAKE_COMMAND})
-set(CMAKE_ASM_COMPILER_ARG1 "-P ${CMAKE_CURRENT_LIST_FILE} -- ${CC65_ASM_COMPILER}")
 
 # Set C internals to work with cc65.
 set(CMAKE_C_COMPILER_ID "cc65" CACHE STRING "C compiler ID")
 set(CMAKE_C_DEPFILE_FORMAT gcc)
 set(CMAKE_C_DEPENDS_USE_COMPILER TRUE)
-set(CMAKE_DEPFILE_FLAGS_C "--create-dep <DEP_FILE>")
-set(CMAKE_C_COMPILE_OBJECT "<CMAKE_C_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> --add-source -l <OBJECT>.s -c <SOURCE>")
+set(CMAKE_DEPFILE_FLAGS_C "--create-full-dep <DEP_FILE>")
+set(CMAKE_C_COMPILE_OBJECT "\"${CMAKE_COMMAND}\" -P \"${CMAKE_CURRENT_LIST_FILE}\" -- \"${CC65_C_COMPILER}\" <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> --add-source -l <OBJECT>.s -c <SOURCE>")
 set(CMAKE_C_CREATE_STATIC_LIBRARY "<CMAKE_AR> a <TARGET> <LINK_FLAGS> <OBJECTS>")
 set(CMAKE_C_FLAGS "--target ${CC65_TARGET_SYSTEM}" CACHE STRING "cc65 C flags")
-set(CMAKE_C_FLAGS_DEBUG "-g")
-set(CMAKE_C_FLAGS_RELEASE "-Oirs")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "-Oirs -g")
-set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> -m <TARGET>.map -Wl --dbgfile,<TARGET>.dbg <LINK_LIBRARIES>")
+set(CMAKE_C_FLAGS_DEBUG_INIT "-g")
+set(CMAKE_C_FLAGS_RELEASE_INIT "-Oirs -DNDEBUG")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-Oirs -g")
+set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Os -DNDEBUG")
+# CMake has no cc65 compiler module to initialize these configuration flags.
+# Repair empty values left in existing build trees as well as new trees.
+foreach(CC65_CONFIG DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+    if(NOT CMAKE_C_FLAGS_${CC65_CONFIG})
+        set(CMAKE_C_FLAGS_${CC65_CONFIG} "${CMAKE_C_FLAGS_${CC65_CONFIG}_INIT}"
+            CACHE STRING "cc65 C flags for ${CC65_CONFIG}" FORCE)
+    endif()
+endforeach()
+set(CMAKE_C_LINK_EXECUTABLE "\"${CMAKE_COMMAND}\" -P \"${CMAKE_CURRENT_LIST_FILE}\" -- \"${CC65_C_COMPILER}\" <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> -m <TARGET>.map -Wl --dbgfile,<TARGET>.dbg <LINK_LIBRARIES>")
 set(CMAKE_C_COMPILER_FORCED TRUE)
 
-# cc65 has no C++. The language is enabled anyway so one project() line serves
-# both compilers, and a C++ source that reaches this compiler is the error.
+# Allows C++ in the project() but fails if you use it.
 set(CMAKE_CXX_COMPILER ${CMAKE_COMMAND})
-set(CMAKE_CXX_COMPILER_ARG1 "-P ${CMAKE_CURRENT_LIST_FILE} -- --no-cxx")
 set(CMAKE_CXX_COMPILER_ID "cc65" CACHE STRING "CXX compiler ID")
-set(CMAKE_CXX_COMPILE_OBJECT "<CMAKE_CXX_COMPILER> <SOURCE>")
+set(CMAKE_CXX_COMPILE_OBJECT "\"${CMAKE_COMMAND}\" -P \"${CMAKE_CURRENT_LIST_FILE}\" -- --no-cxx <SOURCE>")
 set(CMAKE_CXX_OUTPUT_EXTENSION .o)
 set(CMAKE_CXX_COMPILER_FORCED TRUE)
 
@@ -103,15 +99,14 @@ set(CMAKE_INCLUDE_FLAG_ASM "--asm-include-dir ")
 set(CMAKE_ASM_DEPFILE_FORMAT gcc)
 set(CMAKE_ASM_DEPENDS_USE_COMPILER TRUE)
 set(CMAKE_DEPFILE_FLAGS_ASM "--create-dep <DEP_FILE>")
-set(CMAKE_ASM_COMPILE_OBJECT "<CMAKE_ASM_COMPILER> <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
+set(CMAKE_ASM_COMPILE_OBJECT "\"${CMAKE_COMMAND}\" -P \"${CMAKE_CURRENT_LIST_FILE}\" -- \"${CC65_ASM_COMPILER}\" <DEFINES> <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
 set(CMAKE_ASM_CREATE_STATIC_LIBRARY ${CMAKE_C_CREATE_STATIC_LIBRARY})
 set(CMAKE_ASM_FLAGS "--target ${CC65_TARGET_SYSTEM}" CACHE STRING "cc65 ASM flags")
 set(CMAKE_ASM_FLAGS_DEBUG "-g")
 set(CMAKE_ASM_FLAGS_RELEASE "")
-set(CMAKE_ASM_FLAGS_RELWITHDEBINFO "-g")
 set(CMAKE_ASM_SOURCE_FILE_EXTENSIONS s;asm;a65)
 set(CMAKE_ASM_OUTPUT_EXTENSION .o)
-set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_ASM_COMPILER> <FLAGS> <CMAKE_ASM_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> -m <TARGET>.map -Wl --dbgfile,<TARGET>.dbg <LINK_LIBRARIES>")
+set(CMAKE_ASM_LINK_EXECUTABLE "\"${CMAKE_COMMAND}\" -P \"${CMAKE_CURRENT_LIST_FILE}\" -- \"${CC65_ASM_COMPILER}\" <FLAGS> <CMAKE_ASM_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> -m <TARGET>.map -Wl --dbgfile,<TARGET>.dbg <LINK_LIBRARIES>")
 set(CMAKE_ASM_LINKER_PREFERENCE 0)
 set(CMAKE_ASM_LINKER_PREFERENCE_PROPAGATES 0)
 set(CMAKE_ASM_INFORMATION_LOADED 1)

@@ -66,11 +66,11 @@ void player_graphics_init(void)
         RIA.rw0 = *pixels;
     }
     // LENGTH is the number of sprite configs, not a byte size.
-    if (xreg_vga_mode5(MODE5_4BPP | MODE5_16X16, XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), TOTAL_SPRITE_COUNT, VGA_PLANE_SPRITES) < 0)
-    {
-        perror("VGA sprite setup");
-        exit(EXIT_FAILURE);
-    }
+    // if (xreg_vga_mode5(MODE5_4BPP | MODE5_16X16, XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), TOTAL_SPRITE_COUNT, VGA_PLANE_SPRITES) < 0)
+    // {
+    //     perror("VGA sprite setup");
+    //     exit(EXIT_FAILURE);
+    // }
 }
 
 void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[NPC_COUNT])

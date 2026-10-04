@@ -53,6 +53,23 @@
 #define UI_UPPER_X_POS_PX 0
 #define UI_UPPER_Y_POS_PX (UI_UPPER_SCANLINE_START)
 
+
+#define UI_TITLE_WIDTH_CHAR 8
+#define UI_TITLE_HEIGHT_CHAR 1
+#define UI_TITLE_SIZE (UI_TITLE_WIDTH_CHAR * UI_TITLE_HEIGHT_CHAR)
+#define UI_TITLE_SCANLINE_START 86
+#define UI_TITLE_SCANLINE_END (UI_TITLE_SCANLINE_START + (UI_TITLE_HEIGHT_CHAR * 16))
+#define UI_TITLE_X_POS_PX ((SCREEN_WIDTH / 2) - (UI_TITLE_WIDTH_CHAR * 8 / 2))
+#define UI_TITLE_Y_POS_PX (UI_TITLE_SCANLINE_START)
+
+#define UI_PAUSE_WIDTH_CHAR 5
+#define UI_PAUSE_HEIGHT_CHAR 1
+#define UI_PAUSE_SIZE (UI_PAUSE_WIDTH_CHAR * UI_PAUSE_HEIGHT_CHAR)
+#define UI_PAUSE_SCANLINE_START 102
+#define UI_PAUSE_SCANLINE_END (UI_PAUSE_SCANLINE_START + (UI_PAUSE_HEIGHT_CHAR * 8))
+#define UI_PAUSE_X_POS_PX ((SCREEN_WIDTH / 2) - (UI_PAUSE_WIDTH_CHAR * 8 / 2))
+#define UI_PAUSE_Y_POS_PX (UI_PAUSE_SCANLINE_START)
+
 #define UI_PAUSE_WIDTH_CHAR 5
 #define UI_PAUSE_HEIGHT_CHAR 1
 #define UI_PAUSE_SIZE (UI_PAUSE_WIDTH_CHAR * UI_PAUSE_HEIGHT_CHAR)
@@ -299,6 +316,7 @@ typedef struct
     MODE5_IMAGE(NPC_SPRITES_BPP, NPC_SPRITES_WIDTH) npc_images[NPC_SPRITES_COUNT];
     uint8_t song_data[SONG_DATA_MAX_BYTES];
     mode1_4bpp_data_t ui_upper[UI_UPPER_SIZE];
+    mode1_4bpp_data_t ui_title[UI_TITLE_SIZE];
     mode1_4bpp_data_t ui_pause[UI_PAUSE_SIZE];
     mode1_4bpp_data_t ui_message[UI_MESSAGE_SIZE];
     mode1_4bpp_data_t ui_lower[UI_LOWER_SIZE];
@@ -306,6 +324,7 @@ typedef struct
     uint16_t npc_palette[1 << NPC_SPRITES_BPP];
     mode5_sprite_t sprite_configs[SPRITE_LIMIT];
     mode1_config_t ui_upper_config;
+    mode1_config_t ui_title_config;
     mode1_config_t ui_pause_config;
     mode1_config_t ui_message_config;
     mode1_config_t ui_lower_config;
@@ -330,6 +349,7 @@ typedef struct
 #define XRAM_WORLD_PALETTE offsetof(xram_layout_t, world_palette)
 #define XRAM_NPC_PALETTE offsetof(xram_layout_t, npc_palette)
 #define XRAM_UI_UPPER offsetof(xram_layout_t, ui_upper)
+#define XRAM_UI_TITLE offsetof(xram_layout_t, ui_title)
 #define XRAM_UI_PAUSE offsetof(xram_layout_t, ui_pause)
 #define XRAM_UI_MESSAGE offsetof(xram_layout_t, ui_message)
 #define XRAM_UI_LOWER offsetof(xram_layout_t, ui_lower)
@@ -337,6 +357,7 @@ typedef struct
 #define XRAM_SPRITE_CONFIG(slot) \
     (XRAM_SPRITE_CONFIGS + (slot) * sizeof(vga_mode5_sprite_t))
 #define XRAM_UI_UPPER_CONFIG offsetof(xram_layout_t, ui_upper_config)
+#define XRAM_UI_TITLE_CONFIG offsetof(xram_layout_t, ui_title_config)
 #define XRAM_UI_PAUSE_CONFIG offsetof(xram_layout_t, ui_pause_config)
 #define XRAM_UI_MESSAGE_CONFIG offsetof(xram_layout_t, ui_message_config)
 #define XRAM_UI_LOWER_CONFIG offsetof(xram_layout_t, ui_lower_config)
@@ -348,3 +369,7 @@ typedef struct
 #define XRAM_DEFAULT_PALETTE 0xFFFFU
 
 #endif
+/* XRAM_H  Notes:
+XRAM_UI_TITLE and XRAM_UI_PAUSE may be abvle to be combined into a single XRAM region, since they are not used at the same time.  This would save some XRAM space.
+
+*/ 

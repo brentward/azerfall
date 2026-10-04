@@ -23,12 +23,52 @@ static npc_t npcs[NPC_COUNT];
 
 // static vga_mode5_sprite_t sprite_configs[8];
 
-static void background_upload(void);
+// static void background_upload(void);
 static void background_copy_tile(uint8_t destination, uint8_t source);
 static void background_init(void);
 static void background_draw(void);
 static void set_objects(void);
 static void set_npcs(void);
+
+void game_init(void)
+{
+    unsigned char frame;
+
+    memset(&game, 0, sizeof game);
+    game.state =  GAME_STATE_TITLE_SCREEN;
+    /* Reset scanline programming before uploading this run's graphics. */
+    game_set_canvas();
+    frame = RIA.vsync;
+    while (RIA.vsync == frame)
+    {
+    }
+    player_init(&player);
+    object_sprite_init();
+    npc_sprite_init();
+    background_init();
+    set_objects();
+    set_npcs();
+    player_graphics_init();
+    ui_init();
+    input_init();
+    sound_init();
+    music_init(&game, "ROM:Z3LIGHTW.BIN", true);
+    ui_title_set_vga_mode();
+    ui_message_set_vga_mode();
+    /* Z3LIGHTW: sequence 03, row 00 = frame 424, BIN byte 4116.
+     * Recalculate after re-exporting the song (tools/check_music_loop.py). */
+    if (!music_set_loop_offset(&game, 4116U))
+        puts("Invalid music loop point");
+#ifdef MUSIC_AUDITION
+    /* Keep the final five seconds, then hear the jump to sequence 03. */
+    music_skip_to_frame(&game, 4358U);
+#else
+    /* Hold the song at the beginning until the title screen starts gameplay. */
+    music_pause();
+#endif
+    // /* Check after all uploads so later initialization overwrites are caught. */
+    // verify_background_upload();
+}
 
 // /* Startup diagnostic: this reads the RIA's XRAM, not the VGA's replica. */
 // static void verify_background_bytes(const char *label, unsigned address,
@@ -89,7 +129,7 @@ void game_update(void)
     }
     if (input_state.background_reload_pressed)
     {
-        background_upload();
+        background_init();
         // verify_background_upload();
         puts("BG re-upload complete (no VGA mode change)");
     }
@@ -120,6 +160,15 @@ void game_update(void)
             break;
         }
     }
+
+    if (game.state == GAME_STATE_TITLE_SCREEN)
+    {
+        ui_update_titlescreen();
+        if (game.state == GAME_STATE_TITLE_SCREEN)
+            ui_prepare_titlescreen();
+        return;
+    }
+
 
     if (game.state == GAME_STATE_PLAY)
     {
@@ -202,60 +251,33 @@ static void background_draw(void)
     xram0_struct_set(XRAM_BG_CONFIG, vga_mode2_config_t, y_pos_px, PLAYER_SCREEN_Y - player.entity.world_y);
 }
 
-void game_init(void)
-{
-    memset(&game, 0, sizeof game);
-    game.state = GAME_STATE_PLAY;
-    player_init(&player);
-    object_sprite_init();
-    npc_sprite_init();
-    background_init();
-    set_objects();
-    set_npcs();
-    player_graphics_init();
-    ui_init();
-    input_init();
-    sound_init();
-    music_init(&game, "ROM:Z3LIGHTW.BIN", true);
-    /* Z3LIGHTW: sequence 03, row 00 = frame 424, BIN byte 4116.
-     * Recalculate after re-exporting the song (tools/check_music_loop.py). */
-    if (!music_set_loop_offset(&game, 4116U))
-        puts("Invalid music loop point");
-#ifdef MUSIC_AUDITION
-    /* Keep the final five seconds, then hear the jump to sequence 03. */
-    music_skip_to_frame(&game, 4358U);
-#endif
-    // /* Check after all uploads so later initialization overwrites are caught. */
-    // verify_background_upload();
-}
+// static void background_mode_set(void)
+// {
+//     unsigned char frame;
 
-static void background_init(void)
-{
-    unsigned char frame;
+//     // xreg_vga_canvas(2);
+//     if (xreg_vga_canvas(CANVAS_320X180) < 0)
+//     {
+//         perror("VGA canvas setup");
+//         exit(EXIT_FAILURE);
+//     }
 
-    // xreg_vga_canvas(2);
-    if (xreg_vga_canvas(CANVAS_320X180) < 0)
-    {
-        perror("VGA canvas setup");
-        exit(EXIT_FAILURE);
-    }
+//     /* Timing diagnostic: wait for the next VSYNC before the first upload. */
+//     frame = RIA.vsync;
+//     while (RIA.vsync == frame)
+//     {
+//     }
+//     // background_upload();
 
-    /* Timing diagnostic: wait for the next VSYNC before the first upload. */
-    frame = RIA.vsync;
-    while (RIA.vsync == frame)
-    {
-    }
-    background_upload();
-
-    if (xreg_vga_mode2(MODE2_4BPP | MODE2_16X16, XRAM_BG_CONFIG, VGA_PLANE_WORLD) < 0)
-    {
-        perror("VGA background setup");
-        exit(EXIT_FAILURE);
-    }
-}
+//     if (xreg_vga_mode2(MODE2_4BPP | MODE2_16X16, XRAM_BG_CONFIG, VGA_PLANE_WORLD) < 0)
+//     {
+//         perror("VGA background setup");
+//         exit(EXIT_FAILURE);
+//     }
+// }
 
 /* Shared with the R-key diagnostic; only writes XRAM, never VGA registers. */
-static void background_upload(void)
+static void background_init(void)
 {
     uint16_t i;
     const uint8_t *pixels;
@@ -292,6 +314,36 @@ static void background_upload(void)
         RIA.rw0 = (uint8_t)(*palette >> 8);
     }
 
+}
+
+void game_set_canvas(void)
+{
+    if (xreg_vga_canvas(CANVAS_320X180) < 0)
+    {
+        perror("VGA canvas setup");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void background_set_vga_mode(void)
+{
+    /* Timing diagnostic: wait for the next VSYNC before the first upload. */
+    // unsigned char frame = RIA.vsync;
+    // while (RIA.vsync == frame)
+    // {
+    // }
+    // background_init();
+
+    if (xreg_vga_mode2(MODE2_4BPP | MODE2_16X16, XRAM_BG_CONFIG, VGA_PLANE_WORLD) < 0)
+    {
+        perror("VGA background setup");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void sprite_set_vga_mode(void)
+{
+    xreg_vga_mode5(MODE5_4BPP | MODE5_16X16, XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), TOTAL_SPRITE_COUNT, VGA_PLANE_SPRITES);
 }
 
 static void background_copy_tile(uint8_t destination, uint8_t source)
@@ -331,4 +383,17 @@ static void set_npcs(void)
         "It is dangerous\nto go alone!\nTake this."
     );
     
+}
+
+void game_start(void)
+{
+    game.state = GAME_STATE_PLAY;
+    music_resume();
+    game_set_canvas();
+    background_set_vga_mode();
+    sprite_set_vga_mode();
+    ui_upper_set_vga_mode();
+    ui_pause_set_vga_mode();
+    ui_message_set_vga_mode();
+    ui_lower_set_vga_mode();
 }

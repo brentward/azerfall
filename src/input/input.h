@@ -7,7 +7,9 @@
 typedef struct
 {
     bool up_pressed;
+    bool up_consummable;
     bool down_pressed;
+    bool down_consummable;
     bool left_pressed;
     bool right_pressed; 
     bool interact_pressed; /* New press only; consumed after an NPC interaction. */

@@ -18,6 +18,8 @@ input_state_t input_state = {0};
 static uint8_t keystates[KEYBOARD_BYTES] = {0};
 static bool pause_was_down = false;
 static bool reload_was_down = false;
+static bool up_was_down = false;
+static bool down_was_down = false;
 static bool interact_was_down = false;
 
 void input_init(void)
@@ -27,6 +29,8 @@ void input_init(void)
     pause_was_down = false;
     reload_was_down = false;
     interact_was_down = false;
+    up_was_down = false;
+    down_was_down = false;
 
     // Start with no input before enabling live updates from the RIA.
     RIA.addr0 = XRAM_KEYBOARD;
@@ -57,6 +61,8 @@ void input_update(void)
     bool interaction_down = false;
     bool pause_down = false;
     bool reload_down = false;
+    bool up_down = false;
+    bool down_down = false; 
     int i;
     uint8_t *key_state = keystates;
 
@@ -96,8 +102,8 @@ void input_update(void)
     if (!(keystates[0] & 1)) // any key pressed?
     {
 
-        input_state.up_pressed = ((key(KEY_W) || key(KEY_UP)) != 0);
-        input_state.down_pressed = ((key(KEY_S) || key(KEY_DOWN)) != 0);
+        input_state.up_pressed = input_state.up_pressed || ((key(KEY_W) || key(KEY_UP)) != 0);
+        input_state.down_pressed = input_state.down_pressed || ((key(KEY_S) || key(KEY_DOWN)) != 0);
         input_state.left_pressed = ((key(KEY_A) || key(KEY_LEFT)) != 0);
         input_state.right_pressed = ((key(KEY_D) || key(KEY_RIGHT)) != 0);
         pause_down = pause_down || (key(KEY_P) != 0);
@@ -106,8 +112,14 @@ void input_update(void)
     }
 
     // Toggle only on a new press; holding P or Start must not repeat.
+    up_down = input_state.up_pressed;
+    down_down = input_state.down_pressed;
     input_state.pause_pressed = pause_down && !pause_was_down;
     pause_was_down = pause_down;
+    input_state.up_consummable = up_down && !up_was_down;
+    up_was_down = up_down;
+    input_state.down_consummable = down_down && !down_was_down;
+    down_was_down = down_down;
     input_state.background_reload_pressed = reload_down && !reload_was_down;
     reload_was_down = reload_down;
     input_state.interact_pressed = interaction_down && !interact_was_down;

@@ -52,5 +52,9 @@ void timed_update();
 void audio_update(uint8_t elapsed_frames);
 void game_init(void);
 void game_state_set(game_state_t new_state);
+void game_set_canvas(void);
+void background_set_vga_mode(void);
+void sprite_set_vga_mode(void);
+void game_start(void);
 
 #endif
