@@ -11,16 +11,22 @@ struct player_t;
 typedef enum {
     OBJECT_CHEST,
     OBJECT_DOOR,
-    OBJECT_KEY
+    OBJECT_KEY,
+    OBJECT_HEART
 } object_type_t;
 
 typedef enum {
-    CHEST_CLOSED,
-    CHEST_OPEN,
-    DOOR_CLOSED,
-    DOOR_OPENED,
-    KEY_UNCOLLECTED,
-    KEY_COLLECTED
+    CHEST_CLOSED = 0,
+    CHEST_OPEN = 1,
+    DOOR_CLOSED = 2,
+    DOOR_OPENED = 3,
+    KEY_UNCOLLECTED = 4,
+    KEY_COLLECTED = 4,
+    HEART_FULL = 5,
+    HEART_THREE_QUARTER = 6,
+    HEART_HALF = 7,
+    HEART_QUARTER = 8,
+    HEART_EMPTY = 9
 } object_state_t;
 
 

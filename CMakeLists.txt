@@ -31,4 +31,5 @@ target_sources(azerfall PRIVATE
     src/entity/entity.c
     src/graphics/graphics.c
     generated/npc_sprites.c
+    src/game/event.c
 )

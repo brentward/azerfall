@@ -8,6 +8,8 @@
 #include "../xram.h"
 #include "../game/game.h"
 
+struct player_t;
+
 typedef struct {
     bool message_on;
     uint8_t message_counter;
@@ -15,7 +17,10 @@ typedef struct {
     uint8_t title_command;
 } ui_t;
 
-void ui_init(void);
+void ui_init(struct player_t *player);
+void ui_heart_init(struct player_t *player);
+void ui_update_hearts(struct player_t *player);
+uint8_t ui_heart_count(uint8_t max_life);
 void ui_show_message(char *message);
 void ui_show_dialogue(char *dialogue);
 void ui_clear_dialogue(void);

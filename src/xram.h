@@ -321,6 +321,7 @@ typedef struct
     mode1_4bpp_data_t ui_message[UI_MESSAGE_SIZE];
     mode1_4bpp_data_t ui_lower[UI_LOWER_SIZE];
     uint16_t world_palette[1 << WORLD_TILES_BPP];
+    uint16_t object_palette[1 << OBJECT_SPRITES_BPP];
     uint16_t npc_palette[1 << NPC_SPRITES_BPP];
     mode5_sprite_t sprite_configs[SPRITE_LIMIT];
     mode1_config_t ui_upper_config;
@@ -347,6 +348,7 @@ typedef struct
 #define XRAM_NPC_IMAGES offsetof(xram_layout_t, npc_images)
 #define XRAM_SONG_DATA offsetof(xram_layout_t, song_data)
 #define XRAM_WORLD_PALETTE offsetof(xram_layout_t, world_palette)
+#define XRAM_OBJECT_PALETTE offsetof(xram_layout_t, object_palette)
 #define XRAM_NPC_PALETTE offsetof(xram_layout_t, npc_palette)
 #define XRAM_UI_UPPER offsetof(xram_layout_t, ui_upper)
 #define XRAM_UI_TITLE offsetof(xram_layout_t, ui_title)

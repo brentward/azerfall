@@ -15,11 +15,11 @@ int main(void)
     unsigned char frame;
     unsigned char now;
     unsigned char audio_frame;
-    unsigned char start;
-    unsigned char elapsed;
-    unsigned int work_one_frame = 0;
-    unsigned int work_multiple_frames = 0;
-    unsigned int work_extra_frames = 0;
+    // unsigned char start;
+    // unsigned char elapsed;
+    // unsigned int work_one_frame = 0;
+    // unsigned int work_multiple_frames = 0;
+    // unsigned int work_extra_frames = 0;
 
     printf("XRAM TOTAL: 65536 bytes\n");
     printf("XRAM USED: %u bytes\n", XRAM_USED);

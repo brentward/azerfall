@@ -38,8 +38,8 @@ void init_chest(object_t *chest, player_t *player, uint8_t config_slot, int16_t 
 
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, chest->screen_x);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, chest->screen_y);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, XRAM_OBJECT_IMAGES + chest->state * BYTES_PER_SPRITE);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_WORLD_PALETTE);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, chest->xram_sprite_ptr);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_OBJECT_PALETTE);
 }
 
 void init_door(object_t *door, player_t *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
@@ -71,7 +71,7 @@ void init_door(object_t *door, player_t *player, uint8_t config_slot, int16_t wo
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, door->screen_x);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, door->screen_y);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, door->xram_sprite_ptr);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_WORLD_PALETTE);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_OBJECT_PALETTE);
 }
 
 void init_key(object_t *key, player_t *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
@@ -103,7 +103,7 @@ void init_key(object_t *key, player_t *player, uint8_t config_slot, int16_t worl
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, key->screen_x);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, key->screen_y);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, key->xram_sprite_ptr);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_WORLD_PALETTE);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_OBJECT_PALETTE);
 
 }
 
@@ -111,6 +111,8 @@ void object_sprite_init(void)
 {
     int i;
     const uint8_t *pixels = object_sprites;
+    const uint16_t *palette = object_sprites_palette;
+
 
     RIA.addr0 = XRAM_OBJECT_IMAGES;
     RIA.step0 = 1;
@@ -118,6 +120,14 @@ void object_sprite_init(void)
     {
         RIA.rw0 = *pixels;
     }
+
+    RIA.addr0 = XRAM_OBJECT_PALETTE;
+    for (i = 0; i < WORLD_TILES_PALETTE_COUNT; i++, palette++)
+    {
+        RIA.rw0 = (uint8_t)*palette;
+        RIA.rw0 = (uint8_t)(*palette >> 8);
+    }
+
 }
 
 void object_prepare_draw(object_t *obj, player_t *player)

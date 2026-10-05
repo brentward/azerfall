@@ -13,6 +13,7 @@
 #include "../input/input.h"
 #include "../audio/music.h"
 #include "../audio/sound.h"
+#include "event.h"
 #include "../entity/npc.h"
 
 
@@ -36,6 +37,7 @@ void game_init(void)
 
     memset(&game, 0, sizeof game);
     game.state =  GAME_STATE_TITLE_SCREEN;
+    event_init();
     /* Reset scanline programming before uploading this run's graphics. */
     game_set_canvas();
     frame = RIA.vsync;
@@ -49,7 +51,7 @@ void game_init(void)
     set_objects();
     set_npcs();
     player_graphics_init();
-    ui_init();
+    ui_init(&player);
     input_init();
     sound_init();
     music_init(&game, "ROM:Z3LIGHTW.BIN", true);
@@ -157,6 +159,7 @@ void game_update(void)
         case GAME_STATE_DIALOGUE:
             game.state = GAME_STATE_PLAY;
             ui_clear_dialogue();
+            input_state.interact_pressed = false;
             break;
         }
     }
@@ -187,6 +190,7 @@ void game_update(void)
             entity_prepare_draw(entity, &player);
         }
         ui_prepare_skipped_frames(&game);
+        ui_update_hearts(&player);
         ui_prepare_draw();
     }
 }
@@ -343,7 +347,7 @@ void background_set_vga_mode(void)
 
 void sprite_set_vga_mode(void)
 {
-    xreg_vga_mode5(MODE5_4BPP | MODE5_16X16, XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), TOTAL_SPRITE_COUNT, VGA_PLANE_SPRITES);
+    xreg_vga_mode5(MODE5_4BPP | MODE5_16X16, XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), TOTAL_SPRITE_COUNT + ui_heart_count(player.entity.max_life), VGA_PLANE_SPRITES);
 }
 
 static void background_copy_tile(uint8_t destination, uint8_t source)

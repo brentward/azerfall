@@ -8,9 +8,10 @@
 
 ui_t ui;
 
-void ui_init(void)
+void ui_init(player_t *player)
 {
     uint16_t i;
+    entity_t *entity = &player->entity;
 
     char *message;
     char c;
@@ -123,11 +124,71 @@ void ui_init(void)
         RIA.rw0 = MODE1_BG_FG(ANSI_BRIGHT_BLACK, ANSI_WHITE);
     }
 
+    for (i = 0; i < ui_heart_count(entity->max_life); i++)
+    {
+        xram0_struct_set(XRAM_SPRITE_CONFIG(TOTAL_SPRITE_COUNT + i), vga_mode5_sprite_t, x_pos_px, 8 + i * 16);
+        xram0_struct_set(XRAM_SPRITE_CONFIG(TOTAL_SPRITE_COUNT + i), vga_mode5_sprite_t, y_pos_px, 8);
+        xram0_struct_set(XRAM_SPRITE_CONFIG(TOTAL_SPRITE_COUNT + i), vga_mode5_sprite_t, palette_ptr, XRAM_OBJECT_PALETTE);
+    }
+    ui_heart_init(player);
+    ui_update_hearts(player);
+
     // xreg_vga_mode1(MODE1_4BPP | MODE1_8X8, XRAM_UI_UPPER_CONFIG, VGA_PLANE_UI, UI_UPPER_SCANLINE_START, UI_UPPER_SCANLINE_END);
     // xreg_vga_mode1(MODE1_4BPP | MODE1_8X16, XRAM_UI_TITLE_CONFIG, VGA_PLANE_UI, UI_TITLE_SCANLINE_START, UI_TITLE_SCANLINE_END);
     // xreg_vga_mode1(MODE1_4BPP | MODE1_8X8, XRAM_UI_PAUSE_CONFIG, VGA_PLANE_UI, UI_PAUSE_SCANLINE_START, UI_PAUSE_SCANLINE_END);
     // xreg_vga_mode1(MODE1_4BPP | MODE1_8X8, XRAM_UI_MESSAGE_CONFIG, VGA_PLANE_UI, UI_MESSAGE_SCANLINE_START, UI_MESSAGE_SCANLINE_END);
     // xreg_vga_mode1(MODE1_4BPP | MODE1_8X8, XRAM_UI_LOWER_CONFIG, VGA_PLANE_UI, UI_LOWER_SCANLINE_START, UI_LOWER_SCANLINE_END);
+}
+
+void ui_heart_init(player_t *player)
+{
+    uint16_t i;
+    entity_t *entity = &player->entity;
+
+    for (i = 0; i < ui_heart_count(entity->max_life); i++)
+    {
+        xram0_struct_set(XRAM_SPRITE_CONFIG(TOTAL_SPRITE_COUNT + i), vga_mode5_sprite_t, x_pos_px, 8 + i * 16);
+        xram0_struct_set(XRAM_SPRITE_CONFIG(TOTAL_SPRITE_COUNT + i), vga_mode5_sprite_t, y_pos_px, 8);
+        xram0_struct_set(XRAM_SPRITE_CONFIG(TOTAL_SPRITE_COUNT + i), vga_mode5_sprite_t, palette_ptr, XRAM_OBJECT_PALETTE);
+    }
+    ui_update_hearts(player);
+
+}
+
+uint8_t ui_heart_count(uint8_t max_life)
+{
+    unsigned count = (max_life + 3U) / 4U;
+    /* Each heart uses four life units and one reserved sprite slot. */
+    if (count > SPRITE_LIMIT - TOTAL_SPRITE_COUNT)
+        count = SPRITE_LIMIT - TOTAL_SPRITE_COUNT;
+    return (uint8_t)count;
+}
+
+void ui_update_hearts(player_t *player)
+{
+    uint8_t i;
+    uint8_t count = ui_heart_count(player->entity.max_life);
+    uint8_t life = player->entity.life;
+    unsigned image;
+    int remaining;
+
+    if (life > player->entity.max_life)
+        life = player->entity.max_life;
+    for (i = 0; i < count; i++)
+    {
+        remaining = (int)life - i * 4;
+        if (remaining >= 4)
+            image = HEART_FULL;
+        else if (remaining == 3)
+            image = HEART_THREE_QUARTER;
+        else if (remaining == 2)
+            image = HEART_HALF;
+        else if (remaining == 1)
+            image = HEART_QUARTER;
+        else
+            image = HEART_EMPTY;
+        xram0_struct_set(XRAM_SPRITE_CONFIG(TOTAL_SPRITE_COUNT + i), vga_mode5_sprite_t, xram_sprite_ptr, XRAM_OBJECT_IMAGES + image * BYTES_PER_SPRITE);
+    }
 }
 
 
@@ -162,6 +223,7 @@ void ui_show_dialogue(char *dialogue)
     /* Dialogue stays visible until explicitly cleared, without a message timer. */
     ui.message_on = false;
     ui.message_counter = 0;
+
 
     RIA.addr0 = XRAM_UI_MESSAGE;
     RIA.step0 = 1;

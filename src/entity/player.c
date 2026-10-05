@@ -10,6 +10,7 @@
 #include "../world/collision.h"
 #include "../audio/sound.h"
 #include "../game/ui.h"
+#include "../game/event.h"
 
 static void player_animation_update(player_t *player);
 static void player_pickup_object(player_t *player, object_t *objects, uint8_t index);
@@ -29,6 +30,9 @@ void player_init(player_t *player)
     entity->speed = 1;
     entity->direction = DIR_DOWN;
     entity->state = ENTITY_WALKING;
+    entity->max_life = 12;
+    entity->life = entity->max_life;
+
 
 
     entity->animation_frame = 0;
@@ -165,6 +169,8 @@ void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[
     if (input_state.interact_pressed)
         player_interact_facing(player, objects, npcs);
 
+    event_check(player);
+    // input_state.interact_pressed = false; // consume pressed interactions
     player_animation_update(player);
 }
 

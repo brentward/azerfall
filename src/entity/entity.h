@@ -24,7 +24,8 @@ typedef enum {
     DIR_UP = 4,
     DIR_UP_RIGHT = 5,
     DIR_RIGHT = 6,
-    DIR_DOWN_RIGHT = 7
+    DIR_DOWN_RIGHT = 7,
+    DIR_ANY = 8
 } direction_t;
 
 typedef enum {
@@ -49,6 +50,8 @@ typedef struct {
     int16_t screen_x;
     int16_t screen_y;
 
+    uint8_t max_life;
+    uint8_t life;
     uint8_t speed;
     direction_t direction;
     bool collision_on;
