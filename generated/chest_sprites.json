@@ -1,0 +1,64 @@
+{
+  "format": "RP6502 Mode 5 sprite data",
+  "bpp": 4,
+  "sprite_width": 16,
+  "sprite_height": 16,
+  "bytes_per_sprite": 128,
+  "source": "assets\\sprites\\objects\\chest.png",
+  "region": null,
+  "transparent_rgb": [
+    0,
+    0,
+    0
+  ],
+  "columns": 2,
+  "rows": 1,
+  "sprite_count": 2,
+  "total_bytes": 256,
+  "sprites": [
+    {
+      "index": 0,
+      "source_cell": 0,
+      "column": 0,
+      "row": 0,
+      "x": 0,
+      "y": 0,
+      "offset": 0,
+      "bytes": 128,
+      "blank": false,
+      "name": "chest_dir0_frame0"
+    },
+    {
+      "index": 1,
+      "source_cell": 1,
+      "column": 1,
+      "row": 0,
+      "x": 16,
+      "y": 0,
+      "offset": 128,
+      "bytes": 128,
+      "blank": false,
+      "name": "chest_dir0_frame1"
+    }
+  ],
+  "palette": [
+    0,
+    11365,
+    13674,
+    15219,
+    13040,
+    12835,
+    15076,
+    54439,
+    56687,
+    52264,
+    8749,
+    40179,
+    25388,
+    34170,
+    12710,
+    65535
+  ],
+  "palette_format": "RP6502 RGB555, alpha bit 5",
+  "shared_palette": "generated/world_tiles.json"
+}

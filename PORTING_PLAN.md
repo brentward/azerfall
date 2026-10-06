@@ -37,13 +37,30 @@ reference material, not files to translate one-for-one.
      playable-area boundary, including diagonal approaches.
 
 4. **Player and interaction**
-   - Port player movement, facing, animation timing, collision, attacks, and
-     one interactable object.
-   - Start with one player sprite set and one weapon.
-   - Acceptance: movement, attack, damage, and an interaction can be played
-     through without debug shortcuts.
+   - Port player movement, facing, animation timing, collision, and object
+     interactions (keys, doors, and chests).
+   - Acceptance: movement and the key/door/chest route work without debug
+     shortcuts. Weapons and damage follow the life system and enemy targets.
 
-5. **World entities and progression**
+5. **OPL2 music — next**
+   - Follow the original game's implementation order by adding music before
+     weapons and combat.
+   - Convert `assets/music/z3lightw.mid` into an editable RPTracker `.RPT`
+     song with `tools/midi_to_rpt.py`; see `tools/midi_to_rpt.md`.
+   - Audition and adjust the song in RPTracker, then export its OPL2 register
+     stream as `.BIN` for use by the game.
+   - Add a bounded, nonblocking music player using the RP6502 native OPL2
+     system, checking its memory layout against the existing graphics data.
+   - Acceptance: music plays and loops while walking around the map without
+     disrupting movement or rendering.
+
+6. **Life system and first combat**
+   - Add player health, damage, and death behavior.
+   - Add an enemy target, then one weapon and attack/hit detection.
+   - Acceptance: attacks damage an enemy, and the player can take damage and
+     reach the death state without debug shortcuts.
+
+7. **World entities and progression**
    - Add the remaining NPC, monster, projectile, item, and interactive-tile
      types behind shared compact data structures.
    - Port the minimum combat, inventory, experience, and area-transition
@@ -51,41 +68,36 @@ reference material, not files to translate one-for-one.
    - Acceptance: the first route from the starting area to its required
      objective is playable.
 
-6. **UI, save data, audio, and remaining content**
+8. **UI, save data, sound effects, and remaining content**
    - Port title, pause, dialogue, inventory, map, options, game-over, and
      transition states.
    - Add save/load only after the in-memory data model is stable.
-   - Convert audio and remaining image assets according to the RP6502 storage
-     and memory limits.
+   - Add sound effects and remaining music/image assets according to the
+     RP6502 storage and memory limits.
    - Acceptance: the port has a complete start-to-save play session.
 
-7. **Parity and optimization**
+9. **Parity and optimization**
    - Compare behavior against the desktop game using focused scenarios.
    - Measure ROM, RAM, frame time, and asset sizes; optimize only where the
      measurements require it.
    - Acceptance: documented differences are intentional and the target stays
      within its resource budgets.
 
-## First step
+## Next step
 
-The boot probe is the first checkpoint. From the repository root:
+Prepare the first music asset from the repository root:
 
 ```sh
-cmake --build --preset cc65/Debug
+python tools/midi_to_rpt.py assets/music/z3lightw.mid assets/music/Z3LIGHTW.RPT --rows-per-beat 6
 ```
 
-The resulting ROM is `build/cc65/debug/azerfall.rp6502`. Run it with the
-existing RP6502 emulator or hardware and verify these lines:
-
-```text
-AZERFALL RP6502 PORT
-runtime online
-next milestone: video and input
-```
-
-Once that works, the next implementation task is the video and input smoke
-test. We should confirm the exact SDK calls from the installed RP6502 headers
-before choosing a tile or sprite representation.
+Use the native OPL2 build from upstream commit `6300f89`, available locally at
+`build/RPTracker-latest/RPTracker.rp6502`. Load the regenerated `Z3LIGHTW.RPT`;
+RPT3 stores its **204 BPM** tempo automatically. Select SONG mode with F8,
+audition the complete song, and export
+`Z3LIGHTW.BIN`. The converter is implemented; tracker listening checks and
+in-game playback are the next tasks. See `tools/midi_to_rpt.md` for the
+conversion limits and tracker controls.
 
 ## Porting rules
 

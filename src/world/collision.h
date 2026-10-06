@@ -3,8 +3,15 @@
 
 #include <stdbool.h>
 
-#include "../game/entity.h"
+#include "../entity/entity.h"
+#include "../entity/player.h"
+#include "../entity/npc.h"
+#include "../object/object.h"
 
-bool collision_check_tiles(const Entity *entity);
+
+void collision_check_tiles(entity_t *entity, int16_t dx, int16_t dy);
+uint8_t collision_check_object(entity_t *entity, object_t *objects, int16_t dx, int16_t dy);
+uint8_t collision_check_npcs(entity_t *entity, npc_t *npcs, int16_t dx, int16_t dy);
+void collision_check_player(entity_t *entity, player_t *player, int16_t dx, int16_t dy);
 
 #endif // COLLISION_H

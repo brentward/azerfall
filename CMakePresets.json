@@ -9,6 +9,7 @@
         {
             "name": "base",
             "hidden": true,
+            "generator": "Unix Makefiles",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
             }
@@ -36,33 +37,14 @@
             }
         },
         {
-            "name": "cc65/Windows-Debug",
-            "displayName": "cc65/Windows Debug (GNU Make)",
-            "inherits": "cc65/Debug",
-            "generator": "MinGW Makefiles",
-            "binaryDir": "${sourceDir}/build/cc65/windows-debug",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            },
+            "name": "cc65/RelWithDebInfo",
+            "displayName": "cc65/RelWithDebInfo",
+            "description": "The same, optimized, with debug information for the perf testing.",
+            "inherits": "base",
+            "binaryDir": "${sourceDir}/build/cc65/relwithdebinfo",
             "cacheVariables": {
-                "CMAKE_MAKE_PROGRAM": "make"
-            }
-        },
-        {
-            "name": "cc65/Windows-Release",
-            "displayName": "cc65/Windows Release (GNU Make)",
-            "inherits": "cc65/Release",
-            "generator": "MinGW Makefiles",
-            "binaryDir": "${sourceDir}/build/cc65/windows-release",
-            "condition": {
-                "type": "equals",
-                "lhs": "${hostSystemName}",
-                "rhs": "Windows"
-            },
-            "cacheVariables": {
-                "CMAKE_MAKE_PROGRAM": "make"
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "CC65_TARGET_SYSTEM": "rp6502"
             }
         },
         {
@@ -90,16 +72,6 @@
     ],
     "buildPresets": [
         {
-            "name": "cc65/Windows-Debug",
-            "configurePreset": "cc65/Windows-Debug",
-            "targets": ["all"]
-        },
-        {
-            "name": "cc65/Windows-Release",
-            "configurePreset": "cc65/Windows-Release",
-            "targets": ["all"]
-        },
-        {
             "name": "cc65/Debug",
             "displayName": "cc65/Debug",
             "configurePreset": "cc65/Debug",
@@ -109,6 +81,12 @@
             "name": "cc65/Release",
             "displayName": "cc65/Release",
             "configurePreset": "cc65/Release",
+            "targets": ["all"]
+        },
+        {
+            "name": "cc65/RelWithDebInfo",
+            "displayName": "cc65/RelWithDebInfo",
+            "configurePreset": "cc65/RelWithDebInfo",
             "targets": ["all"]
         },
         {
