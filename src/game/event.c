@@ -47,8 +47,7 @@ static void event_damage_pit(game_state_t game_state, player_t *player)
 
     game_state_set(game_state);
     ui_show_dialogue("You fell into a pit!");
-    if (entity->life > 0)
-        --entity->life;
+    player_damage(player, 1);
 
 }
 

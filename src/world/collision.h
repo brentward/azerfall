@@ -12,6 +12,7 @@
 void collision_check_tiles(entity_t *entity, int16_t dx, int16_t dy);
 uint8_t collision_check_object(entity_t *entity, object_t *objects, int16_t dx, int16_t dy);
 uint8_t collision_check_npcs(entity_t *entity, npc_t *npcs, int16_t dx, int16_t dy);
+uint8_t collision_check_monsters(entity_t *entity, entity_t *monsters, int16_t dx, int16_t dy);
 void collision_check_player(entity_t *entity, player_t *player, int16_t dx, int16_t dy);
 
 #endif // COLLISION_H

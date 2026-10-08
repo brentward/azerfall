@@ -1,8 +1,16 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+
+#define DIR_DIVISOR ((RAND_MAX + 1U) / 4U)
+#define DIR_UP_DIVIDE ((DIR_DIVISOR * 1U) - 1U)
+#define DIR_DOWN_DIVIDE ((DIR_DIVISOR * 2U) - 1U)
+#define DIR_LEFT_DIVIDE ((DIR_DIVISOR * 3U) - 1U)
+#define DIR_RIGHT_DIVIDE ((DIR_DIVISOR * 4U) - 1U)
+
 
 struct player_t;
 struct object_t;
@@ -16,16 +24,12 @@ typedef struct {
 } hitbox_t;
 
 typedef enum {
-    DIR_NONE = 0,
-    DIR_DOWN = 0,
-    DIR_DOWN_LEFT = 1,
+    DIR_NONE = 1,
+    DIR_UP = 0,
+    DIR_DOWN = 1,
     DIR_LEFT = 2,
-    DIR_UP_LEFT = 3,
-    DIR_UP = 4,
-    DIR_UP_RIGHT = 5,
-    DIR_RIGHT = 6,
-    DIR_DOWN_RIGHT = 7,
-    DIR_ANY = 8
+    DIR_RIGHT = 3,
+    DIR_ANY = 4
 } direction_t;
 
 typedef enum {
@@ -36,9 +40,10 @@ typedef enum {
 } entity_state_t;
 
 typedef enum {
-    ENTITY_NPC_OLDMAN = 0,
-    ENTITY_PLAYER = 1,
-    ENTITY_NPC_MERCHANT = 8
+    ENTITY_PLAYER = 0,
+    ENTITY_NPC_OLDMAN = 1,
+    ENTITY_NPC_MERCHANT = 2,
+    ENTITY_MONSTER_GREENSLIME = 3
 } entity_type_t;
 
 
@@ -52,9 +57,12 @@ typedef struct {
 
     uint8_t max_life;
     uint8_t life;
+    uint8_t attack;
     uint8_t speed;
     direction_t direction;
     bool collision_on;
+    bool invincible;
+    uint8_t invincible_couunter;
 
     uint8_t animation_frame;
     uint8_t animation_timer;
@@ -65,7 +73,7 @@ typedef struct {
 
 } entity_t;
 
-void entity_update(entity_t *entity, struct player_t *player, struct object_t *objects, struct npc_t *npcs);
+void entity_update(entity_t *entity, struct player_t *player, struct object_t *objects, struct npc_t *npcs, entity_t *monsters);
 
 void entity_prepare_draw(entity_t *entity, struct player_t *player);
 void entity_draw(entity_t *entity, uint8_t config_slot);

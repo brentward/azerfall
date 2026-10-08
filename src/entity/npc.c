@@ -9,12 +9,6 @@
 #include "../graphics/graphics.h"
 #include "../game/ui.h"
 
-#define DIR_DIVISOR ((RAND_MAX + 1U) / 4U)
-#define DIR_UP_DIVIDE ((DIR_DIVISOR * 1U) - 1U)
-#define DIR_DOWN_DIVIDE ((DIR_DIVISOR * 2U) - 1U)
-#define DIR_LEFT_DIVIDE ((DIR_DIVISOR * 3U) - 1U)
-#define DIR_RIGHT_DIVIDE ((DIR_DIVISOR * 4U) - 1U)
-
 
 void npc_sprite_init(void)
 {
@@ -155,14 +149,14 @@ void npc_speak(npc_t *npc, player_t *player)
                 entity->direction = DIR_UP;
                 // Handle down direction
                 break;
-            case DIR_UP_LEFT:
-            case DIR_DOWN_LEFT:
+            // case DIR_UP_LEFT:
+            // case DIR_DOWN_LEFT:
             case DIR_LEFT:
                 entity->direction = DIR_RIGHT;
                 // Handle left direction
                 break;
-            case DIR_DOWN_RIGHT:
-            case DIR_UP_RIGHT:
+            // case DIR_DOWN_RIGHT:
+            // case DIR_UP_RIGHT:
             case DIR_RIGHT:
                 entity->direction = DIR_LEFT;
                 // Handle right direction
@@ -173,5 +167,5 @@ void npc_speak(npc_t *npc, player_t *player)
 
 void npc_merchant_update(entity_t *merchant)
 {
-
+    
 }
