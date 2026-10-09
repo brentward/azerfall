@@ -4,7 +4,7 @@
 #include <rp6502.h>
 
 #include "xram.h"
-#include "game\game.h"
+#include "game/game.h"
 
 unsigned int logic_crossings = 0;
 unsigned int draw_crossings = 0;
