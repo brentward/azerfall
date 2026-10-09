@@ -1,9 +1,9 @@
 # Azerfall
 <!-- rp6502
 preset: cc65/Release
-publish: game.zip
+publish: azerfall.zip
 -->
-[Play My Game](https://brentward.github.io/azerfall/game/)
+[![Play Azerfall](https://brentward.github.io/azerfall/azerfall/screenshot.png)](https://brentward.github.io/azerfall/azerfall/)
 
 Azerfall is a 2D tile-based adventure game being ported to the
 [RP6502](https://picocomputer.github.io/) platform. The project is currently
