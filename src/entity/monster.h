@@ -9,6 +9,8 @@
 #define GREENSLIME_FRAME2 MONSTER_DIR0_FRAME0
 #define GREENSLIME_FRAME3 MONSTER_DIR0_FRAME2
 
+#define MONSTER_EMPTY_FRAME MONSTER_DIR0_FRAME3
+
 struct player_t;
 
 void monster_sprite_init(void);

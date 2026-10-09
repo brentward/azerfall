@@ -198,7 +198,14 @@ void game_update(void)
         }
         for (i = 0, monster = monsters; i < MONSTER_COUNT; i++, monster++)
         {
-
+            if (monster->life == 0 && monster->state != ENTITY_DEAD)
+            {
+                monster->state = ENTITY_DEAD;
+                monster->hitbox.width = 0;
+                monster->hitbox.height = 0;
+                xram0_struct_set(XRAM_SPRITE_CONFIG(MONSTER_SPRITE_SLOT_START + i), vga_mode5_sprite_t, x_pos_px, -16);
+                continue;
+            }
             if (monster->hitbox.width == 0 || monster->hitbox.height == 0)
                 continue;
             entity_update(monster, &player, objects, npcs, monsters);
@@ -227,13 +234,13 @@ void timed_update()
     player_draw(&player);
     for (i = 0, object = objects; i < OBJECT_COUNT; i++, object++)
     {
-        object_draw(object, i + 1);
+        object_draw(object, OBJECT_SPRITE_SLOT_START + i);
     }
     for (i = 0, npc = npcs; i < NPC_COUNT; i++, npc++)
     {
         if (npc->entity.hitbox.width == 0 || npc->entity.hitbox.height == 0)
             continue;
-        entity_draw(&npc->entity, i + 8);
+        entity_draw(&npc->entity, NPC_SPRITE_SLOT_START + i);
     }
 
     for (i = 0, monster = monsters; i < MONSTER_COUNT; i++, monster++)
@@ -390,19 +397,19 @@ static void background_copy_tile(uint8_t destination, uint8_t source)
 
 static void set_objects(void)
 {
-    init_key(&objects[0], &player, 1, 368, 112);
-    init_key(&objects[1], &player, 2, 368, 640);
-    init_key(&objects[2], &player, 3, 608, 128);
-    init_door(&objects[3], &player, 4, 192, 192);
-    init_door(&objects[4], &player, 5, 160, 448);
-    init_door(&objects[5], &player, 6, 208, 368);
-    init_chest(&objects[6], &player, 7, 192, 144);
+    init_key(&objects[0], &player, OBJECT_SPRITE_SLOT_START, 368, 112);
+    init_key(&objects[1], &player, OBJECT_SPRITE_SLOT_START + 1, 368, 640);
+    init_key(&objects[2], &player, OBJECT_SPRITE_SLOT_START + 2, 608, 128);
+    init_door(&objects[3], &player, OBJECT_SPRITE_SLOT_START + 3, 192, 192);
+    init_door(&objects[4], &player, OBJECT_SPRITE_SLOT_START + 4, 160, 448);
+    init_door(&objects[5], &player, OBJECT_SPRITE_SLOT_START + 5, 208, 368);
+    init_chest(&objects[6], &player, OBJECT_SPRITE_SLOT_START + 6, 192, 144);
 }
 
 
 static void set_npcs(void)
 {
-    npc_oldman_init(&npcs[0].entity, &player, 8, 336, 336);
+    npc_oldman_init(&npcs[0].entity, &player, NPC_SPRITE_SLOT_START, 336, 336);
     npc_oldman_set_dialogue(
         &npcs[0],
         "Hello there!",

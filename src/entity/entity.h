@@ -36,7 +36,8 @@ typedef enum {
     ENTITY_IDLE,
     ENTITY_WALKING,
     ENTITY_ATTACKING,
-    ENTITY_DYING
+    ENTITY_DYING,
+    ENTITY_DEAD
 } entity_state_t;
 
 typedef enum {
@@ -62,19 +63,22 @@ typedef struct {
     direction_t direction;
     bool collision_on;
     bool invincible;
-    uint8_t invincible_couunter;
+    bool attacking;
+    uint8_t invincible_counter;
 
     uint8_t animation_frame;
     uint8_t animation_timer;
     uint8_t action_lock_counter;
     uint16_t xram_sprite_ptr;
+    uint16_t xram_weapon_sprite_ptr;
     
     hitbox_t hitbox;
+    hitbox_t attack_hitbox;
 
 } entity_t;
 
 void entity_update(entity_t *entity, struct player_t *player, struct object_t *objects, struct npc_t *npcs, entity_t *monsters);
-
+void entity_damage(entity_t *entity, uint8_t attack);
 void entity_prepare_draw(entity_t *entity, struct player_t *player);
 void entity_draw(entity_t *entity, uint8_t config_slot);
 

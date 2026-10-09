@@ -21,6 +21,7 @@ static bool reload_was_down = false;
 static bool up_was_down = false;
 static bool down_was_down = false;
 static bool interact_was_down = false;
+static bool attack_was_down = false;
 
 void input_init(void)
 {
@@ -29,6 +30,8 @@ void input_init(void)
     pause_was_down = false;
     reload_was_down = false;
     interact_was_down = false;
+    attack_was_down = false;
+    input_state.attack_pressed = false;
     up_was_down = false;
     down_was_down = false;
 
@@ -59,6 +62,7 @@ void input_update(void)
     unsigned char action_buttons;
     unsigned char buttons;
     bool interaction_down = false;
+    bool attack_down = false;
     bool pause_down = false;
     bool reload_down = false;
     bool up_down = false;
@@ -72,6 +76,7 @@ void input_update(void)
     input_state.right_pressed = false;
     input_state.pause_pressed = false;
     input_state.interact_pressed = false;
+    input_state.attack_pressed = false;
 
     RIA.addr1 = XRAM_KEYBOARD;
     RIA.step1 = 1;
@@ -94,6 +99,7 @@ void input_update(void)
     // byte 2 = BTN0: A(0), B(1), X(3), Y(4) for fire
     action_buttons = RIA.rw1;
     interaction_down = (dpad & GAMEPAD_CONNECTED) && (action_buttons & GAMEPAD_BTN0_B);
+    attack_down = (dpad & GAMEPAD_CONNECTED) && (action_buttons & GAMEPAD_BTN0_A);
     // Read BTN1 directly: the commented-out BTN0 read does not advance RIA.
     // RIA.addr1 = XRAM_GAMEPAD + 3;
     buttons = RIA.rw1;
@@ -108,6 +114,7 @@ void input_update(void)
         input_state.right_pressed = ((key(KEY_D) || key(KEY_RIGHT)) != 0);
         pause_down = pause_down || (key(KEY_P) != 0);
         interaction_down = interaction_down || (key(KEY_E) != 0);
+        attack_down = attack_down || ((key(KEY_ENTER) || key(KEY_KPENTER)) != 0);
         reload_down = key(KEY_R) != 0;
     }
 
@@ -124,6 +131,8 @@ void input_update(void)
     reload_was_down = reload_down;
     input_state.interact_pressed = interaction_down && !interact_was_down;
     interact_was_down = interaction_down;
+    input_state.attack_pressed = attack_down && !attack_was_down;
+    attack_was_down = attack_down;
 
     if (!input_state.srand_seeded)
     {

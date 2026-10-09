@@ -40,10 +40,10 @@ void monster_greenslime_init(entity_t *greenslime, player_t *player, uint8_t con
     memset(greenslime, 0, sizeof *greenslime);
     hitbox = &greenslime->hitbox;
     type = &greenslime->type;
-    hitbox->x = 1;
-    hitbox->y = 6;
-    hitbox->width = 14;
-    hitbox->height = 10;
+    hitbox->x = 3;
+    hitbox->y = 8;
+    hitbox->width = 10;
+    hitbox->height = 7;
     greenslime->type = ENTITY_MONSTER_GREENSLIME;
     greenslime->world_x = world_x;
     greenslime->world_y = world_y;

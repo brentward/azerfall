@@ -112,6 +112,15 @@ void entity_update(entity_t *entity, struct player_t *player, struct object_t *o
         entity->world_x += dx;
         entity->world_y += dy;
     }
+    if (entity->invincible)
+    {
+        if (++entity->invincible_counter >= 40)
+        {
+            entity->invincible = false;
+            entity->invincible_counter = 0;
+        }
+    }
+
     
     entity_animation_update(entity);
 
@@ -199,6 +208,12 @@ static void entity_animation_update(entity_t *entity)
             break;
     }
 
+    if (entity->invincible && entity->animation_frame %2 == 0)
+    {
+        entity->xram_sprite_ptr = XRAM_MONSTER_IMAGES + MONSTER_EMPTY_FRAME * BYTES_PER_SPRITE;
+    }
+
+
     // switch (entity->state) {
     //     case ENTITY_IDLE:
     //         sprite_index = entity->direction * 2 + entity->type;
@@ -216,6 +231,17 @@ static void entity_animation_update(entity_t *entity)
     // }
     
 }
+
+void entity_damage(entity_t *entity, uint8_t attack)
+{
+    if (!entity->invincible && attack > 0 && entity->life > 0)
+    {
+        entity->life = attack >= entity->life ? 0 : entity->life - attack;
+        entity->invincible = true;
+        entity->invincible_counter = 0;
+    }
+}
+
 
 void entity_prepare_draw(entity_t *entity, player_t *player)
 {

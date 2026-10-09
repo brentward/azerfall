@@ -153,7 +153,7 @@ uint8_t collision_check_monsters(entity_t *entity, entity_t *monsters, int16_t d
     int16_t top = entity->world_y + entity->hitbox.y + dy;
     int16_t bottom = top + entity->hitbox.height - 1;
 
-    for (i = 0; i < NPC_COUNT; i++, monster++)
+    for (i = 0; i < MONSTER_COUNT; i++, monster++)
     {
 
 
