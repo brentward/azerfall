@@ -5,6 +5,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/tools/rp6502.cmake)
 project(MY-RP6502-PROJECT C CXX ASM)
 
 add_executable(azerfall)
+if(CMAKE_C_COMPILER_ID STREQUAL "cc65")
+    # Keep debug symbols while fitting code and sprite data in CPU RAM.
+    target_compile_options(azerfall PRIVATE "$<$<CONFIG:Debug>:-Oirs>")
+endif()
 option(MUSIC_AUDITION "Start music five seconds before the loop boundary" OFF)
 if(MUSIC_AUDITION)
     target_compile_definitions(azerfall PRIVATE MUSIC_AUDITION)
@@ -32,4 +36,6 @@ target_sources(azerfall PRIVATE
     src/graphics/graphics.c
     generated/npc_sprites.c
     src/game/event.c
+    src/entity/monster.c
+    generated/monster_sprites.c
 )

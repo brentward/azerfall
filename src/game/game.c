@@ -15,12 +15,14 @@
 #include "../audio/sound.h"
 #include "event.h"
 #include "../entity/npc.h"
+#include "../entity/monster.h"
 
 
 static player_t player;
 static game_t game;
 static object_t objects[OBJECT_COUNT];
 static npc_t npcs[NPC_COUNT];
+static entity_t monsters[MONSTER_COUNT];
 
 // static vga_mode5_sprite_t sprite_configs[8];
 
@@ -30,6 +32,7 @@ static void background_init(void);
 static void background_draw(void);
 static void set_objects(void);
 static void set_npcs(void);
+static void set_monsters(void);
 
 void game_init(void)
 {
@@ -47,9 +50,11 @@ void game_init(void)
     player_init(&player);
     object_sprite_init();
     npc_sprite_init();
+    monster_sprite_init();
     background_init();
     set_objects();
     set_npcs();
+    set_monsters();
     player_graphics_init();
     ui_init(&player);
     input_init();
@@ -122,6 +127,8 @@ void game_update(void)
     uint8_t i;
     object_t *object;
     npc_t *npc;
+    entity_t *monster;
+
     input_update();
     if (input_state.srand_seeded && !game.srand_init)
     {
@@ -175,7 +182,7 @@ void game_update(void)
 
     if (game.state == GAME_STATE_PLAY)
     {
-        player_update(&player, objects, npcs);
+        player_update(&player, objects, npcs, monsters);
         for (i = 0, object = objects; i < OBJECT_COUNT; i++, object++)
         {
             object_prepare_draw(object, &player);
@@ -186,9 +193,25 @@ void game_update(void)
 
             if (entity->hitbox.width == 0 || entity->hitbox.height == 0)
                 continue;
-            entity_update(entity, &player, objects, npcs);
+            entity_update(entity, &player, objects, npcs, monsters);
             entity_prepare_draw(entity, &player);
         }
+        for (i = 0, monster = monsters; i < MONSTER_COUNT; i++, monster++)
+        {
+            if (monster->life == 0 && monster->state != ENTITY_DEAD)
+            {
+                monster->state = ENTITY_DEAD;
+                monster->hitbox.width = 0;
+                monster->hitbox.height = 0;
+                xram0_struct_set(XRAM_SPRITE_CONFIG(MONSTER_SPRITE_SLOT_START + i), vga_mode5_sprite_t, x_pos_px, -16);
+                continue;
+            }
+            if (monster->hitbox.width == 0 || monster->hitbox.height == 0)
+                continue;
+            entity_update(monster, &player, objects, npcs, monsters);
+            entity_prepare_draw(monster, &player);
+        }
+
         ui_prepare_skipped_frames(&game);
         ui_update_hearts(&player);
         ui_prepare_draw();
@@ -205,18 +228,26 @@ void timed_update()
     uint8_t i;
     object_t *object;
     npc_t *npc;
+    entity_t *monster;
     background_draw();
     ui_draw();
     player_draw(&player);
     for (i = 0, object = objects; i < OBJECT_COUNT; i++, object++)
     {
-        object_draw(object, i + 1);
+        object_draw(object, OBJECT_SPRITE_SLOT_START + i);
     }
     for (i = 0, npc = npcs; i < NPC_COUNT; i++, npc++)
     {
         if (npc->entity.hitbox.width == 0 || npc->entity.hitbox.height == 0)
             continue;
-        entity_draw(&npc->entity, i + 8);
+        entity_draw(&npc->entity, NPC_SPRITE_SLOT_START + i);
+    }
+
+    for (i = 0, monster = monsters; i < MONSTER_COUNT; i++, monster++)
+    {
+        if (monster->hitbox.width == 0 || monster->hitbox.height == 0)
+            continue;
+        entity_draw(monster, MONSTER_SPRITE_SLOT_START + i);
     }
 
     if (++game.background_animation_timer == 60)
@@ -366,19 +397,19 @@ static void background_copy_tile(uint8_t destination, uint8_t source)
 
 static void set_objects(void)
 {
-    init_key(&objects[0], &player, 1, 368, 112);
-    init_key(&objects[1], &player, 2, 368, 640);
-    init_key(&objects[2], &player, 3, 608, 128);
-    init_door(&objects[3], &player, 4, 192, 192);
-    init_door(&objects[4], &player, 5, 160, 448);
-    init_door(&objects[5], &player, 6, 208, 368);
-    init_chest(&objects[6], &player, 7, 192, 144);
+    init_key(&objects[0], &player, OBJECT_SPRITE_SLOT_START, 368, 112);
+    init_key(&objects[1], &player, OBJECT_SPRITE_SLOT_START + 1, 368, 640);
+    init_key(&objects[2], &player, OBJECT_SPRITE_SLOT_START + 2, 608, 128);
+    init_door(&objects[3], &player, OBJECT_SPRITE_SLOT_START + 3, 192, 192);
+    init_door(&objects[4], &player, OBJECT_SPRITE_SLOT_START + 4, 160, 448);
+    init_door(&objects[5], &player, OBJECT_SPRITE_SLOT_START + 5, 208, 368);
+    init_chest(&objects[6], &player, OBJECT_SPRITE_SLOT_START + 6, 192, 144);
 }
 
 
 static void set_npcs(void)
 {
-    npc_oldman_init(&npcs[0].entity, &player, 8, 336, 336);
+    npc_oldman_init(&npcs[0].entity, &player, NPC_SPRITE_SLOT_START, 336, 336);
     npc_oldman_set_dialogue(
         &npcs[0],
         "Hello there!",
@@ -387,6 +418,12 @@ static void set_npcs(void)
         "It is dangerous\nto go alone!\nTake this."
     );
     
+}
+
+static void set_monsters(void)
+{
+    monster_greenslime_init(&monsters[0], &player, MONSTER_SPRITE_SLOT_START, 368, 576);
+    monster_greenslime_init(&monsters[1], &player, MONSTER_SPRITE_SLOT_START + 1, 368, 592);
 }
 
 void game_start(void)

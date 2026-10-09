@@ -4,18 +4,9 @@
   "sprite_width": 16,
   "sprite_height": 16,
   "bytes_per_sprite": 128,
-  "source": "assets/sprites/player/loose sprites.png",
-  "region": [
-    0,
-    0,
-    64,
-    128
-  ],
-  "transparent_rgb": [
-    48,
-    104,
-    80
-  ],
+  "source": "assets\\sprites\\player\\player.png",
+  "region": null,
+  "transparent_rgb": null,
   "columns": 4,
   "rows": 8,
   "sprite_count": 32,
@@ -31,7 +22,8 @@
       "offset": 0,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir0_frame0"
+      "layout": "animation",
+      "name": "player_dir0_frame0"
     },
     {
       "index": 1,
@@ -43,7 +35,8 @@
       "offset": 128,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir0_frame1"
+      "layout": "animation",
+      "name": "player_dir0_frame1"
     },
     {
       "index": 2,
@@ -55,7 +48,8 @@
       "offset": 256,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir0_frame2"
+      "layout": "animation",
+      "name": "player_dir0_frame2"
     },
     {
       "index": 3,
@@ -67,7 +61,8 @@
       "offset": 384,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir0_frame3"
+      "layout": "animation",
+      "name": "player_dir0_frame3"
     },
     {
       "index": 4,
@@ -79,7 +74,8 @@
       "offset": 512,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir1_frame0"
+      "layout": "animation",
+      "name": "player_dir1_frame0"
     },
     {
       "index": 5,
@@ -91,7 +87,8 @@
       "offset": 640,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir1_frame1"
+      "layout": "animation",
+      "name": "player_dir1_frame1"
     },
     {
       "index": 6,
@@ -103,7 +100,8 @@
       "offset": 768,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir1_frame2"
+      "layout": "animation",
+      "name": "player_dir1_frame2"
     },
     {
       "index": 7,
@@ -115,7 +113,8 @@
       "offset": 896,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir1_frame3"
+      "layout": "animation",
+      "name": "player_dir1_frame3"
     },
     {
       "index": 8,
@@ -127,7 +126,8 @@
       "offset": 1024,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir2_frame0"
+      "layout": "animation",
+      "name": "player_dir2_frame0"
     },
     {
       "index": 9,
@@ -139,7 +139,8 @@
       "offset": 1152,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir2_frame1"
+      "layout": "animation",
+      "name": "player_dir2_frame1"
     },
     {
       "index": 10,
@@ -151,7 +152,8 @@
       "offset": 1280,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir2_frame2"
+      "layout": "animation",
+      "name": "player_dir2_frame2"
     },
     {
       "index": 11,
@@ -163,7 +165,8 @@
       "offset": 1408,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir2_frame3"
+      "layout": "animation",
+      "name": "player_dir2_frame3"
     },
     {
       "index": 12,
@@ -175,7 +178,8 @@
       "offset": 1536,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir3_frame0"
+      "layout": "animation",
+      "name": "player_dir3_frame0"
     },
     {
       "index": 13,
@@ -187,7 +191,8 @@
       "offset": 1664,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir3_frame1"
+      "layout": "animation",
+      "name": "player_dir3_frame1"
     },
     {
       "index": 14,
@@ -199,7 +204,8 @@
       "offset": 1792,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir3_frame2"
+      "layout": "animation",
+      "name": "player_dir3_frame2"
     },
     {
       "index": 15,
@@ -211,7 +217,8 @@
       "offset": 1920,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir3_frame3"
+      "layout": "animation",
+      "name": "player_dir3_frame3"
     },
     {
       "index": 16,
@@ -222,8 +229,9 @@
       "y": 64,
       "offset": 2048,
       "bytes": 128,
-      "blank": false,
-      "name": "player_walk_dir4_frame0"
+      "blank": true,
+      "layout": "animation",
+      "name": "player_dir4_frame0"
     },
     {
       "index": 17,
@@ -235,7 +243,8 @@
       "offset": 2176,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir4_frame1"
+      "layout": "animation",
+      "name": "player_dir4_frame1"
     },
     {
       "index": 18,
@@ -247,7 +256,8 @@
       "offset": 2304,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir4_frame2"
+      "layout": "animation",
+      "name": "player_dir4_frame2"
     },
     {
       "index": 19,
@@ -259,7 +269,8 @@
       "offset": 2432,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir4_frame3"
+      "layout": "animation",
+      "name": "player_dir4_frame3"
     },
     {
       "index": 20,
@@ -270,8 +281,9 @@
       "y": 80,
       "offset": 2560,
       "bytes": 128,
-      "blank": false,
-      "name": "player_walk_dir5_frame0"
+      "blank": true,
+      "layout": "animation",
+      "name": "player_dir5_frame0"
     },
     {
       "index": 21,
@@ -283,7 +295,8 @@
       "offset": 2688,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir5_frame1"
+      "layout": "animation",
+      "name": "player_dir5_frame1"
     },
     {
       "index": 22,
@@ -295,7 +308,8 @@
       "offset": 2816,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir5_frame2"
+      "layout": "animation",
+      "name": "player_dir5_frame2"
     },
     {
       "index": 23,
@@ -307,7 +321,8 @@
       "offset": 2944,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir5_frame3"
+      "layout": "animation",
+      "name": "player_dir5_frame3"
     },
     {
       "index": 24,
@@ -318,8 +333,9 @@
       "y": 96,
       "offset": 3072,
       "bytes": 128,
-      "blank": false,
-      "name": "player_walk_dir6_frame0"
+      "blank": true,
+      "layout": "animation",
+      "name": "player_dir6_frame0"
     },
     {
       "index": 25,
@@ -331,7 +347,8 @@
       "offset": 3200,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir6_frame1"
+      "layout": "animation",
+      "name": "player_dir6_frame1"
     },
     {
       "index": 26,
@@ -343,7 +360,8 @@
       "offset": 3328,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir6_frame2"
+      "layout": "animation",
+      "name": "player_dir6_frame2"
     },
     {
       "index": 27,
@@ -355,7 +373,8 @@
       "offset": 3456,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir6_frame3"
+      "layout": "animation",
+      "name": "player_dir6_frame3"
     },
     {
       "index": 28,
@@ -366,8 +385,9 @@
       "y": 112,
       "offset": 3584,
       "bytes": 128,
-      "blank": false,
-      "name": "player_walk_dir7_frame0"
+      "blank": true,
+      "layout": "animation",
+      "name": "player_dir7_frame0"
     },
     {
       "index": 29,
@@ -379,7 +399,8 @@
       "offset": 3712,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir7_frame1"
+      "layout": "animation",
+      "name": "player_dir7_frame1"
     },
     {
       "index": 30,
@@ -391,7 +412,8 @@
       "offset": 3840,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir7_frame2"
+      "layout": "animation",
+      "name": "player_dir7_frame2"
     },
     {
       "index": 31,
@@ -403,7 +425,32 @@
       "offset": 3968,
       "bytes": 128,
       "blank": false,
-      "name": "player_walk_dir7_frame3"
+      "layout": "animation",
+      "name": "player_dir7_frame3"
     }
-  ]
+  ],
+  "layout": "animation",
+  "skip_blank": false,
+  "frames_per_direction": 4,
+  "directions": 8,
+  "palette": [
+    0,
+    8416,
+    6574,
+    28478,
+    17956,
+    50744,
+    37088,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "palette_format": "RP6502 RGB555, alpha bit 5",
+  "shared_palette": null
 }

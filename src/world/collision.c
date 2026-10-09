@@ -138,6 +138,52 @@ uint8_t collision_check_npcs(entity_t *entity, npc_t *npcs, int16_t dx, int16_t 
     return index;
 }
 
+uint8_t collision_check_monsters(entity_t *entity, entity_t *monsters, int16_t dx, int16_t dy)
+{
+    entity_t *monster = monsters;
+    uint8_t i;
+    uint8_t index = 255;
+    int16_t monster_left;
+    int16_t monster_right;
+    int16_t monster_top;
+    int16_t monster_bottom;
+
+    int16_t left = entity->world_x + entity->hitbox.x + dx;
+    int16_t right = left + entity->hitbox.width - 1;
+    int16_t top = entity->world_y + entity->hitbox.y + dy;
+    int16_t bottom = top + entity->hitbox.height - 1;
+
+    for (i = 0; i < MONSTER_COUNT; i++, monster++)
+    {
+
+
+        /* Empty slots have no hitbox. Compare addresses to skip only ourselves. */
+        if (monster == entity || monster ->hitbox.width == 0 ||
+            monster->hitbox.height == 0)
+            continue;
+
+        monster_left = monster->world_x + monster->hitbox.x;
+        monster_right = monster_left + monster->hitbox.width - 1;
+
+        /* No horizontal overlap: move to the next object. */
+        if (left > monster_right || right < monster_left)
+            continue;
+
+        /* Only calculate vertical bounds when horizontal overlap exists. */
+        monster_top = monster->world_y + monster->hitbox.y;
+        monster_bottom = monster_top + monster->hitbox.height - 1;
+
+        if (top <= monster_bottom && bottom >= monster_top)
+        {
+            entity->collision_on = true;
+            return i;
+        }
+    }
+
+    return index;
+}
+
+
 void collision_check_player(entity_t *entity, player_t *player, int16_t dx, int16_t dy)
 {
     entity_t *player_entity = &player->entity;

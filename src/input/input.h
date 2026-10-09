@@ -13,6 +13,7 @@ typedef struct
     bool left_pressed;
     bool right_pressed; 
     bool interact_pressed; /* New press only; consumed after an NPC interaction. */
+    bool attack_pressed; /* New press only; clear after consuming an attack. */
     bool pause_pressed;
     bool background_reload_pressed;
     bool srand_seeded;

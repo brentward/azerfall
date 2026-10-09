@@ -9,12 +9,6 @@
 #include "../graphics/graphics.h"
 #include "../game/ui.h"
 
-#define DIR_DIVISOR ((RAND_MAX + 1U) / 4U)
-#define DIR_UP_DIVIDE ((DIR_DIVISOR * 1U) - 1U)
-#define DIR_DOWN_DIVIDE ((DIR_DIVISOR * 2U) - 1U)
-#define DIR_LEFT_DIVIDE ((DIR_DIVISOR * 3U) - 1U)
-#define DIR_RIGHT_DIVIDE ((DIR_DIVISOR * 4U) - 1U)
-
 
 void npc_sprite_init(void)
 {
@@ -48,14 +42,16 @@ void npc_oldman_init(entity_t *oldman, player_t *player, uint8_t config_slot, in
     memset(oldman, 0, sizeof *oldman);
     hitbox = &oldman->hitbox;
     type = &oldman->type;
-    hitbox->x = 0;
-    hitbox->y = 0;
-    hitbox->width = 16;
-    hitbox->height = 16;
+    hitbox->x = 3;
+    hitbox->y = 5;
+    hitbox->width = 11;
+    hitbox->height = 11;
     oldman->type = ENTITY_NPC_OLDMAN;
     oldman->world_x = world_x;
     oldman->world_y = world_y;
     oldman->speed = 1;
+    oldman->max_life = 1;
+    oldman->life = oldman->max_life;
     oldman->xram_sprite_ptr = XRAM_NPC_IMAGES + OLDMAN_DIR0_FRAME0 * BYTES_PER_SPRITE;
     screen_position = get_screen_position_entity(oldman, player);
     oldman->screen_x = screen_position.screen_x;
@@ -155,14 +151,14 @@ void npc_speak(npc_t *npc, player_t *player)
                 entity->direction = DIR_UP;
                 // Handle down direction
                 break;
-            case DIR_UP_LEFT:
-            case DIR_DOWN_LEFT:
+            // case DIR_UP_LEFT:
+            // case DIR_DOWN_LEFT:
             case DIR_LEFT:
                 entity->direction = DIR_RIGHT;
                 // Handle left direction
                 break;
-            case DIR_DOWN_RIGHT:
-            case DIR_UP_RIGHT:
+            // case DIR_DOWN_RIGHT:
+            // case DIR_UP_RIGHT:
             case DIR_RIGHT:
                 entity->direction = DIR_LEFT;
                 // Handle right direction
@@ -173,5 +169,5 @@ void npc_speak(npc_t *npc, player_t *player)
 
 void npc_merchant_update(entity_t *merchant)
 {
-
+    
 }

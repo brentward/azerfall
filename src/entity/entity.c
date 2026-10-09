@@ -3,13 +3,14 @@
 #include "../xram.h"
 #include "../input/input.h"
 #include "npc.h"
+#include "monster.h"
 #include "../graphics/graphics.h"
 #include "../world/collision.h"
 
 static void entity_animation_update(entity_t *entity);
 
 // Do not call with the entity_t in player_t types
-void entity_update(entity_t *entity, struct player_t *player, struct object_t *objects, npc_t *npcs)
+void entity_update(entity_t *entity, struct player_t *player, struct object_t *objects, npc_t *npcs, entity_t *monsters)
 {
     int16_t dx;
     int16_t dy;
@@ -26,6 +27,9 @@ void entity_update(entity_t *entity, struct player_t *player, struct object_t *o
         case ENTITY_NPC_MERCHANT:
             npc_merchant_update(entity);
             break;
+
+        case ENTITY_MONSTER_GREENSLIME:
+            monster_greenslime_update(entity);
         
         default:
             break;
@@ -94,13 +98,29 @@ void entity_update(entity_t *entity, struct player_t *player, struct object_t *o
     if (!entity->collision_on)
         collision_check_npcs(entity, npcs, dx, dy);
     if (!entity->collision_on)
+        collision_check_monsters(entity, monsters, dx, dy);
+    if (!entity->collision_on)
+    {
         collision_check_player(entity, player, dx, dy);
+        if (entity->collision_on && entity->type == ENTITY_MONSTER_GREENSLIME)
+            player_damage(player, entity->attack);
+    }
+        
 
     if (!entity->collision_on)
     {
         entity->world_x += dx;
         entity->world_y += dy;
     }
+    if (entity->invincible)
+    {
+        if (++entity->invincible_counter >= 40)
+        {
+            entity->invincible = false;
+            entity->invincible_counter = 0;
+        }
+    }
+
     
     entity_animation_update(entity);
 
@@ -119,6 +139,11 @@ static void entity_animation_update(entity_t *entity)
     switch (entity->type)
     {
         case ENTITY_NPC_OLDMAN:
+            entity->animation_timer++;
+            if (entity->animation_timer >= 12) { // Example timer threshold
+                entity->animation_timer = 0;
+                entity->animation_frame = (entity->animation_frame + 1) % 2; // Example animation frame update
+            }
             switch (entity->direction)
             {
                 case DIR_UP:
@@ -137,14 +162,57 @@ static void entity_animation_update(entity_t *entity)
                     sprite_index = OLDMAN_DIR0_FRAME0 + entity->animation_frame;
                     break;
             }
+            entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
             break;
         case ENTITY_NPC_MERCHANT:
+            entity->animation_timer++;
+            if (entity->animation_timer >= 12) { // Example timer threshold
+                entity->animation_timer = 0;
+                entity->animation_frame = (entity->animation_frame + 1) % 2; // Example animation frame update
+            }
+
             sprite_index = MERCHANT_DIR0_FRAME0 + entity->animation_frame;
+            entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
+            break;
+        case ENTITY_MONSTER_GREENSLIME:
+            entity->animation_timer++;
+            if (entity->animation_timer >= 12) { // Example timer threshold
+                entity->animation_timer = 0;
+                entity->animation_frame = (entity->animation_frame + 1) % 4; // Example animation frame update
+            }
+ 
+            switch (entity->animation_frame)
+            {
+                case 0:
+                    sprite_index = GREENSLIME_FRAME0;
+                    break;
+                case 1:
+                    sprite_index = GREENSLIME_FRAME1;
+                    break;
+                case 2:
+                    sprite_index = GREENSLIME_FRAME2;
+                    break;
+                case 3:
+                    sprite_index = GREENSLIME_FRAME3;
+                    break;
+                default:
+                    sprite_index = GREENSLIME_FRAME0;
+                    break;
+
+            }
+            entity->xram_sprite_ptr =  XRAM_MONSTER_IMAGES + sprite_index * BYTES_PER_SPRITE;
             break;
         default:
             sprite_index = OLDMAN_DIR1_FRAME0 + entity->animation_frame;
+            entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
             break;
     }
+
+    if (entity->invincible && entity->animation_frame %2 == 0)
+    {
+        entity->xram_sprite_ptr = XRAM_MONSTER_IMAGES + MONSTER_EMPTY_FRAME * BYTES_PER_SPRITE;
+    }
+
 
     // switch (entity->state) {
     //     case ENTITY_IDLE:
@@ -161,8 +229,19 @@ static void entity_animation_update(entity_t *entity)
     //         // Handle dying animation
     //         break;
     // }
-    entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
+    
 }
+
+void entity_damage(entity_t *entity, uint8_t attack)
+{
+    if (!entity->invincible && attack > 0 && entity->life > 0)
+    {
+        entity->life = attack >= entity->life ? 0 : entity->life - attack;
+        entity->invincible = true;
+        entity->invincible_counter = 0;
+    }
+}
+
 
 void entity_prepare_draw(entity_t *entity, player_t *player)
 {
