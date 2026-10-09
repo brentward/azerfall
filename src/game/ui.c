@@ -25,8 +25,8 @@ void ui_init(player_t *player)
     xram0_struct_set(XRAM_UI_UPPER_CONFIG, vga_mode1_config_t, width_chars, UI_UPPER_WIDTH_CHAR);
     xram0_struct_set(XRAM_UI_UPPER_CONFIG, vga_mode1_config_t, height_chars, UI_UPPER_HEIGHT_CHAR);
     xram0_struct_set(XRAM_UI_UPPER_CONFIG, vga_mode1_config_t, xram_data_ptr, XRAM_UI_UPPER);
-    xram0_struct_set(XRAM_UI_UPPER_CONFIG, vga_mode1_config_t, xram_palette_ptr, XRAM_DEFAULT_PALETTE);
-    xram0_struct_set(XRAM_UI_UPPER_CONFIG, vga_mode1_config_t, xram_font_ptr, XRAM_DEFAULT_FONT);
+    xram0_struct_set(XRAM_UI_UPPER_CONFIG, vga_mode1_config_t, xram_palette_ptr, DEFAULT_PALETTE);
+    xram0_struct_set(XRAM_UI_UPPER_CONFIG, vga_mode1_config_t, xram_font_ptr, DEFAULT_FONT);
 
     xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, x_wrap, false);
     xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, y_wrap, false);
@@ -35,8 +35,8 @@ void ui_init(player_t *player)
     xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, width_chars, UI_TITLE_WIDTH_CHAR);
     xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, height_chars, UI_TITLE_HEIGHT_CHAR);
     xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, xram_data_ptr, XRAM_UI_TITLE);
-    xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, xram_palette_ptr, XRAM_DEFAULT_PALETTE);
-    xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, xram_font_ptr, XRAM_DEFAULT_FONT);
+    xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, xram_palette_ptr, DEFAULT_PALETTE);
+    xram0_struct_set(XRAM_UI_TITLE_CONFIG, vga_mode1_config_t, xram_font_ptr, DEFAULT_FONT);
 
     xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, x_wrap, false);
     xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, y_wrap, false);
@@ -45,8 +45,8 @@ void ui_init(player_t *player)
     xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, width_chars, UI_PAUSE_WIDTH_CHAR);
     xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, height_chars, UI_PAUSE_HEIGHT_CHAR);
     xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, xram_data_ptr, XRAM_UI_PAUSE);
-    xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, xram_palette_ptr, XRAM_DEFAULT_PALETTE);
-    xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, xram_font_ptr, XRAM_DEFAULT_FONT);
+    xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, xram_palette_ptr, DEFAULT_PALETTE);
+    xram0_struct_set(XRAM_UI_PAUSE_CONFIG, vga_mode1_config_t, xram_font_ptr, DEFAULT_FONT);
 
     xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, x_wrap, false);
     xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, y_wrap, false);
@@ -55,8 +55,8 @@ void ui_init(player_t *player)
     xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, width_chars, UI_MESSAGE_WIDTH_CHAR);
     xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, height_chars, UI_MESSAGE_HEIGHT_CHAR);
     xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, xram_data_ptr, XRAM_UI_MESSAGE);
-    xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, xram_palette_ptr, XRAM_DEFAULT_PALETTE);
-    xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, xram_font_ptr, XRAM_DEFAULT_FONT);
+    xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, xram_palette_ptr, DEFAULT_PALETTE);
+    xram0_struct_set(XRAM_UI_MESSAGE_CONFIG, vga_mode1_config_t, xram_font_ptr, DEFAULT_FONT);
 
     xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, x_wrap, false);
     xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, y_wrap, false);
@@ -65,8 +65,8 @@ void ui_init(player_t *player)
     xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, width_chars, UI_LOWER_WIDTH_CHAR);
     xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, height_chars, UI_LOWER_HEIGHT_CHAR);
     xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, xram_data_ptr, XRAM_UI_LOWER);
-    xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, xram_palette_ptr, XRAM_DEFAULT_PALETTE);
-    xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, xram_font_ptr, XRAM_DEFAULT_FONT);
+    xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, xram_palette_ptr, DEFAULT_PALETTE);
+    xram0_struct_set(XRAM_UI_LOWER_CONFIG, vga_mode1_config_t, xram_font_ptr, DEFAULT_FONT);
 
     RIA.addr0 = XRAM_UI_UPPER;
     RIA.step0 = 1;

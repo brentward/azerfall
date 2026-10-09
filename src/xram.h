@@ -4,6 +4,7 @@
 #define XRAM_H
 
 #include <rp6502.h>
+#include "rp5602-compat.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -379,8 +380,8 @@ typedef struct
 #define XRAM_KEYBOARD offsetof(xram_layout_t, keyboard)
 #define XRAM_GAMEPAD offsetof(xram_layout_t, gamepad)
 
-#define XRAM_DEFAULT_FONT 0xFFFFU
-#define XRAM_DEFAULT_PALETTE 0xFFFFU
+#define DEFAULT_FONT 0xFFFFU
+#define DEFAULT_PALETTE 0xFFFFU
 
 #endif
 /* XRAM_H  Notes:

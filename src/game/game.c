@@ -66,13 +66,13 @@ void game_init(void)
      * Recalculate after re-exporting the song (tools/check_music_loop.py). */
     if (!music_set_loop_offset(&game, 4116U))
         puts("Invalid music loop point");
-#ifdef MUSIC_AUDITION
-    /* Keep the final five seconds, then hear the jump to sequence 03. */
-    music_skip_to_frame(&game, 4358U);
-#else
+// #ifdef MUSIC_AUDITION
+//     /* Keep the final five seconds, then hear the jump to sequence 03. */
+//     music_skip_to_frame(&game, 4358U);
+// #else
     /* Hold the song at the beginning until the title screen starts gameplay. */
     music_pause();
-#endif
+// #endif
     // /* Check after all uploads so later initialization overwrites are caught. */
     // verify_background_upload();
 }

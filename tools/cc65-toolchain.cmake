@@ -73,16 +73,6 @@ set(CMAKE_C_CREATE_STATIC_LIBRARY "<CMAKE_AR> a <TARGET> <LINK_FLAGS> <OBJECTS>"
 set(CMAKE_C_FLAGS "--target ${CC65_TARGET_SYSTEM}" CACHE STRING "cc65 C flags")
 set(CMAKE_C_FLAGS_DEBUG_INIT "-g")
 set(CMAKE_C_FLAGS_RELEASE_INIT "-Oirs -DNDEBUG")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "-Oirs -g")
-set(CMAKE_C_FLAGS_MINSIZEREL_INIT "-Os -DNDEBUG")
-# CMake has no cc65 compiler module to initialize these configuration flags.
-# Repair empty values left in existing build trees as well as new trees.
-foreach(CC65_CONFIG DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
-    if(NOT CMAKE_C_FLAGS_${CC65_CONFIG})
-        set(CMAKE_C_FLAGS_${CC65_CONFIG} "${CMAKE_C_FLAGS_${CC65_CONFIG}_INIT}"
-            CACHE STRING "cc65 C flags for ${CC65_CONFIG}" FORCE)
-    endif()
-endforeach()
 set(CMAKE_C_LINK_EXECUTABLE "\"${CMAKE_COMMAND}\" -P \"${CMAKE_CURRENT_LIST_FILE}\" -- \"${CC65_C_COMPILER}\" <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> -m <TARGET>.map -Wl --dbgfile,<TARGET>.dbg <LINK_LIBRARIES>")
 set(CMAKE_C_COMPILER_FORCED TRUE)
 

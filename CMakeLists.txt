@@ -5,17 +5,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/tools/rp6502.cmake)
 project(MY-RP6502-PROJECT C CXX ASM)
 
 add_executable(azerfall)
-if(CMAKE_C_COMPILER_ID STREQUAL "cc65")
-    # Keep debug symbols while fitting code and sprite data in CPU RAM.
-    target_compile_options(azerfall PRIVATE "$<$<CONFIG:Debug>:-Oirs>")
-endif()
-option(MUSIC_AUDITION "Start music five seconds before the loop boundary" OFF)
-if(MUSIC_AUDITION)
-    target_compile_definitions(azerfall PRIVATE MUSIC_AUDITION)
-endif()
+rp6502_map(azerfall src/xram.h "XRAM_.*")
 rp6502_asset(azerfall help src/help.txt)
 rp6502_asset(azerfall Z3LIGHTW.BIN assets/music/Z3LIGHTW.BIN)
 rp6502_executable(azerfall DATA default RESET default)
+rp6502_web(azerfall)
 target_sources(azerfall PRIVATE
     src/main.c
     generated/world_tiles.c
