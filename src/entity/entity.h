@@ -11,6 +11,8 @@
 #define DIR_LEFT_DIVIDE ((DIR_DIVISOR * 3U) - 1U)
 #define DIR_RIGHT_DIVIDE ((DIR_DIVISOR * 4U) - 1U)
 
+#define ANIMATION_FRAMES 4
+
 
 struct player_t;
 struct object_t;
@@ -55,6 +57,7 @@ typedef struct {
     int16_t world_y;
     int16_t screen_x;
     int16_t screen_y;
+    uint8_t config_slot;
 
     uint8_t max_life;
     uint8_t life;
@@ -63,13 +66,13 @@ typedef struct {
     direction_t direction;
     bool collision_on;
     bool invincible;
-    bool attacking;
     uint8_t invincible_counter;
 
     uint8_t animation_frame;
     uint8_t animation_timer;
     uint8_t action_lock_counter;
     uint16_t xram_sprite_ptr;
+    uint16_t xram_palette_ptr;
     uint16_t xram_weapon_sprite_ptr;
     
     hitbox_t hitbox;

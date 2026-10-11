@@ -60,7 +60,7 @@
       "y": 0,
       "offset": 384,
       "bytes": 128,
-      "blank": true,
+      "blank": false,
       "layout": "animation",
       "name": "monster_dir0_frame3"
     },
@@ -73,7 +73,7 @@
       "y": 16,
       "offset": 512,
       "bytes": 128,
-      "blank": true,
+      "blank": false,
       "layout": "animation",
       "name": "monster_dir1_frame0"
     },
@@ -86,7 +86,7 @@
       "y": 16,
       "offset": 640,
       "bytes": 128,
-      "blank": true,
+      "blank": false,
       "layout": "animation",
       "name": "monster_dir1_frame1"
     },
@@ -99,7 +99,7 @@
       "y": 16,
       "offset": 768,
       "bytes": 128,
-      "blank": true,
+      "blank": false,
       "layout": "animation",
       "name": "monster_dir1_frame2"
     },
@@ -227,13 +227,13 @@
   "directions": 4,
   "palette": [
     0,
+    15871,
     6371,
+    65535,
     14886,
-    17126,
     34621,
+    17126,
     10421,
-    0,
-    0,
     0,
     0,
     0,

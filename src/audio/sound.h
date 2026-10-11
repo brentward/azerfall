@@ -19,11 +19,16 @@
 #define PICKUP_HOLD_FRAMES 14
 #define PICKUP_FADE_FRAMES 36
 
+#define SWORD_FRAMES 10     /* About 167 ms at the 60 Hz sound clock */
+#define SWORD_BLOCK 4
+#define SWORD_MOD_LEVEL 0x00
+
 
 typedef enum {
     SFX_NONE,
     SFX_DOOR,
-    SFX_PICKUP
+    SFX_PICKUP,
+    SFX_SWORD
 } sfx_id_t;
 
 

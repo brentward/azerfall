@@ -44,6 +44,7 @@ void player_init(player_t *player)
     entity->animation_frame = 0;
     entity->animation_timer = 0;
     entity->xram_sprite_ptr = XRAM_PLAYER_IMAGES + PLAYER_DIR0_FRAME0 * BYTES_PER_SPRITE;
+    entity->xram_palette_ptr = XRAM_PLAYER_PALETTE;
     entity->xram_weapon_sprite_ptr = XRAM_PLAYER_IMAGES + PLAYER_EMPTY_FRAME0 * BYTES_PER_SPRITE;
 
     entity->type = ENTITY_PLAYER;
@@ -202,7 +203,7 @@ void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[
                 player_interact_facing(player, objects, npcs);
             if (input_state.attack_pressed)
             {
-                entity->attacking = true;
+                sound_play(SFX_SWORD);
                 entity->state = ENTITY_ATTACKING;
                 entity->action_lock_counter = 0;
                 entity->animation_frame = 0;
@@ -232,8 +233,6 @@ void player_attacking(player_t *player,  entity_t monsters[MONSTER_COUNT])
 {
     entity_t *entity = &player->entity;
     hitbox_t *hitbox = &entity->hitbox;
-    int16_t screen_x;
-    int16_t screen_y;
     int16_t curent_world_x = entity->world_x;
     int16_t current_world_y = entity->world_y;
     uint8_t player_hitbox_x = hitbox->x;
@@ -300,7 +299,6 @@ void player_attacking(player_t *player,  entity_t monsters[MONSTER_COUNT])
     if (entity->action_lock_counter++ > 24){
         entity->state = ENTITY_IDLE;
         entity->action_lock_counter = 0;
-        entity->attacking = false;
     }
 }
 
@@ -380,8 +378,18 @@ void player_damage(player_t *player, uint8_t attack)
     if (!entity->invincible && attack > 0 && entity->life > 0)
     {
         entity->life = attack >= entity->life ? 0 : entity->life - attack;
-        entity->invincible = true;
-        entity->invincible_counter = 0;
+        if (entity->life == 0)
+        {
+            entity->state = ENTITY_DYING;
+            entity->action_lock_counter = 0;
+            entity->animation_frame = 0;
+            entity->animation_timer = 0;
+        }
+        else
+        {
+            entity->invincible = true;
+            entity->invincible_counter = 0;
+        }
     }
 }
 
@@ -391,51 +399,70 @@ static void player_animation_update(player_t *player)
 {
     // Update player animation based on state and direction
     entity_t *entity = &player->entity;
-    int sprite_index = entity->direction * 4;
+    int sprite_index = PLAYER_WALK_DIRTECTION_ANIMATION_LOOKUP[entity->direction][0];
     int weapon_sprite_index = PLAYER_EMPTY_FRAME0;
 
     entity->animation_timer++;
     switch (entity->state)
     {
-        case ENTITY_IDLE:
+        
         case ENTITY_DYING:
+            if (entity->animation_timer >= 24)
+            {
+                entity->animation_timer = 0;
+                if (++entity->animation_frame >= PLAYER_DYING_ANIMATION_FRAMES)
+                {
+                    entity->state = ENTITY_DEAD;
+                    entity->animation_frame = 0;
+                    entity->action_lock_counter = 0;
+                    xram0_struct_set(XRAM_SPRITE_CONFIG(entity->config_slot), vga_mode5_sprite_t, x_pos_px, -16);
+                }
+            }
+            break;
+        case ENTITY_IDLE:
         case ENTITY_WALKING:
             if (entity->animation_timer >= 12)
             {
                 entity->animation_timer = 0;
                 entity->animation_frame = (entity->animation_frame + 1) % 4;
             }
+            break;
         case ENTITY_ATTACKING:
             if (entity->animation_timer >= 6)
             {
                 entity->animation_timer = 0;
                 entity->animation_frame = (entity->animation_frame + 1) % 4;
             } 
+            break;
     }
     if (entity->invincible && entity->animation_frame % 2 == 0)
     {
-        sprite_index = PLAYER_EMPTY_FRAME0;
+        // sprite_index = PLAYER_EMPTY_FRAME0;
+        entity->xram_palette_ptr = DEFAULT_PALETTE;
     } else 
     {
-        switch (entity->state) {
-            case ENTITY_IDLE:
-                sprite_index = PLAYER_WALK_DIRTECTION_ANIMATION_LOOKUP[entity->direction][0];
-                weapon_sprite_index = PLAYER_EMPTY_FRAME0;
-                break;
-            case ENTITY_WALKING:
-                sprite_index = PLAYER_WALK_DIRTECTION_ANIMATION_LOOKUP[entity->direction][entity->animation_frame];
-                weapon_sprite_index = PLAYER_EMPTY_FRAME0;
-
-                break;
-            case ENTITY_ATTACKING:
-                sprite_index = PLAYER_ATTACK_DIRTECTION_LOOKUP[entity->direction];
-                weapon_sprite_index = SWORD_DIRTECTION_ANIMATION_LOOKUP[entity->direction][entity->animation_frame];
-                break;
-            case ENTITY_DYING:
-                // Handle dying animation
-                break;
-        }
+        entity->xram_palette_ptr = XRAM_PLAYER_PALETTE;
     }
+    switch (entity->state) {
+        case ENTITY_IDLE:
+            sprite_index = PLAYER_WALK_DIRTECTION_ANIMATION_LOOKUP[entity->direction][0];
+            weapon_sprite_index = PLAYER_EMPTY_FRAME0;
+            break;
+        case ENTITY_WALKING:
+            sprite_index = PLAYER_WALK_DIRTECTION_ANIMATION_LOOKUP[entity->direction][entity->animation_frame];
+            weapon_sprite_index = PLAYER_EMPTY_FRAME0;
+
+            break;
+        case ENTITY_ATTACKING:
+            sprite_index = PLAYER_ATTACK_DIRTECTION_LOOKUP[entity->direction];
+            weapon_sprite_index = SWORD_DIRTECTION_ANIMATION_LOOKUP[entity->direction][entity->animation_frame];
+            break;
+        case ENTITY_DYING:
+            sprite_index = PLAYER_DYING_ANIMATION_LOOKUP[entity->animation_frame];
+            weapon_sprite_index = PLAYER_EMPTY_FRAME0;
+            break;
+    }
+    
     entity->xram_sprite_ptr =  XRAM_PLAYER_IMAGES + sprite_index * BYTES_PER_SPRITE;
     entity->xram_weapon_sprite_ptr = XRAM_PLAYER_IMAGES + weapon_sprite_index * BYTES_PER_SPRITE;
 
@@ -488,6 +515,7 @@ void player_draw(player_t *player)
     entity_t *entity = &player->entity;
     
     xram0_struct_set(XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), vga_mode5_sprite_t, xram_sprite_ptr, entity->xram_sprite_ptr);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(PLAYER_SPRITE_SLOT), vga_mode5_sprite_t, palette_ptr, entity->xram_palette_ptr);
     xram0_struct_set(XRAM_SPRITE_CONFIG(PLAYER_WEAPON_SLOT), vga_mode5_sprite_t, xram_sprite_ptr, entity->xram_weapon_sprite_ptr);
 
 }

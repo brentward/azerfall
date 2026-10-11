@@ -62,6 +62,16 @@ NMake. In VS Code, run **CMake: Select Configure Preset** and select
 `build/cc65/windows-debug/azerfall.rp6502`. Use `cc65/Windows-Release`
 for a release build.
 
+For an optimized Windows build with debug symbols, select
+**cc65/Windows RelWithDebInfo (GNU Make)** in VS Code, or run:
+
+```powershell
+cmake --preset cc65/Windows-RelWithDebInfo
+cmake --build --preset cc65/Windows-RelWithDebInfo
+```
+
+The ROM and debug symbols are written to `build/cc65/windows-relwithdebinfo/`.
+
 ## Run
 
 Use the included tool to upload the ROM and attach to its console:

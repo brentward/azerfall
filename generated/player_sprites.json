@@ -229,7 +229,7 @@
       "y": 64,
       "offset": 2048,
       "bytes": 128,
-      "blank": true,
+      "blank": false,
       "layout": "animation",
       "name": "player_dir4_frame0"
     },
@@ -281,7 +281,7 @@
       "y": 80,
       "offset": 2560,
       "bytes": 128,
-      "blank": true,
+      "blank": false,
       "layout": "animation",
       "name": "player_dir5_frame0"
     },

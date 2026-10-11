@@ -198,15 +198,23 @@ void game_update(void)
         }
         for (i = 0, monster = monsters; i < MONSTER_COUNT; i++, monster++)
         {
-            if (monster->life == 0 && monster->state != ENTITY_DEAD)
+            /* Empty slots have no hitbox; dying monsters still need updates. */
+            if (monster->state == ENTITY_DEAD ||
+                (monster->state != ENTITY_DYING &&
+                 (monster->hitbox.width == 0 || monster->hitbox.height == 0)))
+                continue;
+            if (monster->life == 0 && monster->state != ENTITY_DYING)
             {
-                monster->state = ENTITY_DEAD;
+                monster->state = ENTITY_DYING;
+                monster->animation_frame = 0;
+                monster->animation_timer = 0;
+                monster->action_lock_counter = 0;
                 monster->hitbox.width = 0;
                 monster->hitbox.height = 0;
-                xram0_struct_set(XRAM_SPRITE_CONFIG(MONSTER_SPRITE_SLOT_START + i), vga_mode5_sprite_t, x_pos_px, -16);
-                continue;
+                monster->xram_palette_ptr = XRAM_MONSTER_PALETTE;
             }
-            if (monster->hitbox.width == 0 || monster->hitbox.height == 0)
+            // if (monster->hitbox.width == 0 || monster->hitbox.height == 0)
+            if (monster->state == ENTITY_DEAD)
                 continue;
             entity_update(monster, &player, objects, npcs, monsters);
             entity_prepare_draw(monster, &player);
@@ -245,7 +253,9 @@ void timed_update()
 
     for (i = 0, monster = monsters; i < MONSTER_COUNT; i++, monster++)
     {
-        if (monster->hitbox.width == 0 || monster->hitbox.height == 0)
+        if (monster->state == ENTITY_DEAD ||
+            (monster->state != ENTITY_DYING &&
+             (monster->hitbox.width == 0 || monster->hitbox.height == 0)))
             continue;
         entity_draw(monster, MONSTER_SPRITE_SLOT_START + i);
     }

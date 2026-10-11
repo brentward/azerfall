@@ -18,6 +18,14 @@ void entity_update(entity_t *entity, struct player_t *player, struct object_t *o
     int move_x;
     int move_y;
 
+    if (entity->state == ENTITY_DEAD)
+        return;
+    if (entity->state == ENTITY_DYING)
+    {
+        entity_animation_update(entity);
+        return;
+    }
+
     switch (entity->type)
     {
         case ENTITY_NPC_OLDMAN:
@@ -72,25 +80,6 @@ void entity_update(entity_t *entity, struct player_t *player, struct object_t *o
         entity_animation_update(entity);
         return;
     }
-    // // Move X first, then test Y from the resulting position.
-    // // Keep facing the input direction while sliding along an obstacle.
-    // entity->collision_on = false;
-    // collision_check_tiles(entity, dx, 0);
-    // index_x = collision_check_object(entity, objects, dx, 0);
-    // blocked_x = entity->collision_on;
-    // if (!blocked_x)
-    //     entity->world_x += dx;
-
-    // entity->collision_on = false;
-    // collision_check_tiles(entity, 0, dy);
-    // index_y = collision_check_object(entity, objects, 0, dy);
-    // if (!entity->collision_on)
-    //     entity->world_y += dy;
-    // entity->collision_on = entity->collision_on || blocked_x;
-
-    // entity_animation_update(entity);
-    // Move X first, then test Y from the resulting position.
-    // Keep facing the input direction while sliding along an obstacle.
     entity->collision_on = false;
     collision_check_tiles(entity, dx, dy);
     if (!entity->collision_on)
@@ -131,105 +120,112 @@ static void entity_animation_update(entity_t *entity)
 {
     int sprite_index;
 
-    entity->animation_timer++;
-    if (entity->animation_timer >= 12) { // Example timer threshold
-        entity->animation_timer = 0;
-        entity->animation_frame = (entity->animation_frame + 1) % 2; // Example animation frame update
-    }
-    switch (entity->type)
+    if (entity->state == ENTITY_DYING)
     {
-        case ENTITY_NPC_OLDMAN:
-            entity->animation_timer++;
-            if (entity->animation_timer >= 12) { // Example timer threshold
-                entity->animation_timer = 0;
-                entity->animation_frame = (entity->animation_frame + 1) % 2; // Example animation frame update
-            }
-            switch (entity->direction)
+        /* Display each death frame for twelve updates, then stop. */
+        if (entity->animation_timer >= 12)
+        {
+            entity->animation_timer = 0;
+            if (++entity->animation_frame >= MONSTER_DYING_ANIMATION_FRAMES)
             {
-                case DIR_UP:
-                    sprite_index = OLDMAN_DIR1_FRAME0 + entity->animation_frame;
-                    break;
-                case DIR_DOWN:
-                    sprite_index = OLDMAN_DIR0_FRAME0 + entity->animation_frame;
-                    break;
-                case DIR_LEFT:
-                    sprite_index = OLDMAN_DIR2_FRAME0 + entity->animation_frame;
-                    break;
-                case DIR_RIGHT:
-                    sprite_index = OLDMAN_DIR3_FRAME0 + entity->animation_frame;
-                    break;
-                default:
-                    sprite_index = OLDMAN_DIR0_FRAME0 + entity->animation_frame;
-                    break;
+                entity->state = ENTITY_DEAD;
+                entity->animation_frame = 0;
+                entity->action_lock_counter = 0;
+                xram0_struct_set(XRAM_SPRITE_CONFIG(entity->config_slot), vga_mode5_sprite_t, x_pos_px, -16);
+                return;
             }
-            entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
-            break;
-        case ENTITY_NPC_MERCHANT:
-            entity->animation_timer++;
-            if (entity->animation_timer >= 12) { // Example timer threshold
-                entity->animation_timer = 0;
-                entity->animation_frame = (entity->animation_frame + 1) % 2; // Example animation frame update
-            }
-
-            sprite_index = MERCHANT_DIR0_FRAME0 + entity->animation_frame;
-            entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
-            break;
-        case ENTITY_MONSTER_GREENSLIME:
-            entity->animation_timer++;
-            if (entity->animation_timer >= 12) { // Example timer threshold
-                entity->animation_timer = 0;
-                entity->animation_frame = (entity->animation_frame + 1) % 4; // Example animation frame update
-            }
- 
-            switch (entity->animation_frame)
-            {
-                case 0:
-                    sprite_index = GREENSLIME_FRAME0;
-                    break;
-                case 1:
-                    sprite_index = GREENSLIME_FRAME1;
-                    break;
-                case 2:
-                    sprite_index = GREENSLIME_FRAME2;
-                    break;
-                case 3:
-                    sprite_index = GREENSLIME_FRAME3;
-                    break;
-                default:
-                    sprite_index = GREENSLIME_FRAME0;
-                    break;
-
-            }
-            entity->xram_sprite_ptr =  XRAM_MONSTER_IMAGES + sprite_index * BYTES_PER_SPRITE;
-            break;
-        default:
-            sprite_index = OLDMAN_DIR1_FRAME0 + entity->animation_frame;
-            entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
-            break;
-    }
-
-    if (entity->invincible && entity->animation_frame %2 == 0)
+        }
+        sprite_index = MONSTER_DYING_ANIMATION_LOOKUP[entity->animation_frame];
+        entity->animation_timer++;
+        entity->xram_sprite_ptr = XRAM_MONSTER_IMAGES + sprite_index * BYTES_PER_SPRITE;
+                 
+    } else 
     {
-        entity->xram_sprite_ptr = XRAM_MONSTER_IMAGES + MONSTER_EMPTY_FRAME * BYTES_PER_SPRITE;
+
+        switch (entity->type)
+        {
+            case ENTITY_NPC_OLDMAN:
+                entity->animation_timer++;
+                if (entity->animation_timer >= 12) { // Example timer threshold
+                    entity->animation_timer = 0;
+                    entity->animation_frame = (entity->animation_frame + 1) % 2; // Example animation frame update
+                }
+                switch (entity->direction)
+                {
+                    case DIR_UP:
+                        sprite_index = OLDMAN_DIR1_FRAME0 + entity->animation_frame;
+                        break;
+                    case DIR_DOWN:
+                        sprite_index = OLDMAN_DIR0_FRAME0 + entity->animation_frame;
+                        break;
+                    case DIR_LEFT:
+                        sprite_index = OLDMAN_DIR2_FRAME0 + entity->animation_frame;
+                        break;
+                    case DIR_RIGHT:
+                        sprite_index = OLDMAN_DIR3_FRAME0 + entity->animation_frame;
+                        break;
+                    default:
+                        sprite_index = OLDMAN_DIR0_FRAME0 + entity->animation_frame;
+                        break;
+                }
+                entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
+                break;
+            case ENTITY_NPC_MERCHANT:
+                entity->animation_timer++;
+                if (entity->animation_timer >= 12) { // Example timer threshold
+                    entity->animation_timer = 0;
+                    entity->animation_frame = (entity->animation_frame + 1) % 2; // Example animation frame update
+                }
+
+                sprite_index = MERCHANT_DIR0_FRAME0 + entity->animation_frame;
+                entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
+                break;
+            case ENTITY_MONSTER_GREENSLIME:
+                entity->animation_timer++;
+                if (entity->animation_timer >= 12) { // Example timer threshold
+                    entity->animation_timer = 0;
+                    entity->animation_frame = (entity->animation_frame + 1) % 4; // Example animation frame update
+                }
+
+                switch (entity->animation_frame)
+                {
+                    case 0:
+                        sprite_index = GREENSLIME_FRAME0;
+                        break;
+                    case 1:
+                        sprite_index = GREENSLIME_FRAME1;
+                        break;
+                    case 2:
+                        sprite_index = GREENSLIME_FRAME2;
+                        break;
+                    case 3:
+                        sprite_index = GREENSLIME_FRAME3;
+                        break;
+                    default:
+                        sprite_index = GREENSLIME_FRAME0;
+                        break;
+
+                }
+                if (entity->invincible && entity->animation_frame %2 == 0)
+                    entity->xram_palette_ptr = XRAM_WORLD_PALETTE;
+                else
+                    entity->xram_palette_ptr = XRAM_MONSTER_PALETTE;
+
+
+
+                entity->xram_sprite_ptr =  XRAM_MONSTER_IMAGES + sprite_index * BYTES_PER_SPRITE;
+                break;
+            default:
+                sprite_index = OLDMAN_DIR1_FRAME0 + entity->animation_frame;
+                entity->xram_sprite_ptr =  XRAM_NPC_IMAGES + sprite_index * BYTES_PER_SPRITE;
+                break;
+        }
     }
-
-
-    // switch (entity->state) {
-    //     case ENTITY_IDLE:
-    //         sprite_index = entity->direction * 2 + entity->type;
-    //         break;
-    //     case ENTITY_WALKING:
-    //         sprite_index = entity->direction * 2 + entity->animation_frame + entity->type;
-    //         // Animation frame is updated in player_update based on timer
-    //         break;
-    //     case ENTITY_ATTACKING:
-    //         // Handle attacking animation
-    //         break;
-    //     case ENTITY_DYING:
-    //         // Handle dying animation
-    //         break;
+    // if (entity->invincible && entity->animation_frame %2 == 0)
+    // {
+    //     entity->xram_sprite_ptr = XRAM_MONSTER_IMAGES + MONSTER_EMPTY_FRAME * BYTES_PER_SPRITE;
     // }
-    
+
 }
 
 void entity_damage(entity_t *entity, uint8_t attack)
@@ -261,4 +257,5 @@ void entity_draw(entity_t *entity, uint8_t config_slot)
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, entity->screen_x);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, entity->screen_y);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, entity->xram_sprite_ptr);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, entity->xram_palette_ptr);
 }

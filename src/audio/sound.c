@@ -33,6 +33,16 @@ static const uint8_t mod_attenuation[DOOR_FRAMES / 2] = {
     6, 6, 7, 8, 9, 10, 11, 12
 };
 
+/* A bright initial snap drops into the reference's rising noisy swish.
+ * Omit the WAV's leading/trailing silence for responsive play. */
+static const uint16_t sword_fnum[SWORD_FRAMES] = {
+    600, 380, 250, 270, 300, 360, 440, 540, 650, 700
+};
+static const uint8_t sword_level[SWORD_FRAMES] = {
+    /* Lower OPL attenuation = louder: full attack, settling over 50 ms. */
+    0, 5, 10, 20, 16, 14, 12, 14, 17, 23
+};
+
 
 
 static void opl_write(uint8_t reg, uint8_t value)
@@ -60,6 +70,24 @@ static void door_patch(uint8_t channel)
     opl_write(0x94 + channel, 0x0A);
     opl_write(0xF4 + channel, 0x00);
     opl_write(0xC7 + channel, 0x0E); /* Maximum feedback, FM */
+}
+
+static void sword_patch(uint8_t channel)
+{
+    /* Maximum feedback makes the modulator noise-like; strong FM gives a
+     * coarse retro swish. Sustain lets the frame envelope shape the burst. */
+    opl_write(0x31 + channel, 0x21);
+    opl_write(0x51 + channel, SWORD_MOD_LEVEL);
+    opl_write(0x71 + channel, 0xF0);
+    opl_write(0x91 + channel, 0x0F);
+    opl_write(0xF1 + channel, 0x00);
+
+    opl_write(0x34 + channel, 0x21);
+    opl_write(0x54 + channel, sword_level[0]);
+    opl_write(0x74 + channel, 0xF0);
+    opl_write(0x94 + channel, 0x0F);
+    opl_write(0xF4 + channel, 0x00);
+    opl_write(0xC7 + channel, 0x0E);
 }
 
 static void pickup_patch(uint8_t channel)
@@ -139,6 +167,12 @@ void sound_play(sfx_id_t sound)
             voice->delay = 0;
             break;
 
+        case SFX_SWORD:
+            voice->sound = SFX_SWORD;
+            voice->frame = 0;
+            voice->delay = 0;
+            break;
+
         default:
             voice->sound = SFX_NONE;
             break;
@@ -163,6 +197,27 @@ void sound_update(void)
 
         switch (voice->sound)
         {
+            case SFX_SWORD:
+                if (voice->frame == 0)
+                {
+                    opl_set_pitch(sword_fnum[0], SWORD_BLOCK, 0, i);
+                }
+                else if (voice->frame <= SWORD_FRAMES)
+                {
+                    if (voice->frame == 1)
+                        sword_patch(i);
+                    opl_write(0x54 + i, sword_level[voice->frame - 1]);
+                    opl_set_pitch(sword_fnum[voice->frame - 1], SWORD_BLOCK, 1, i);
+                }
+                else
+                {
+                    opl_write(0x54 + i, 63);
+                    opl_set_pitch(sword_fnum[SWORD_FRAMES - 1], SWORD_BLOCK, 0, i);
+                    voice->sound = SFX_NONE;
+                    continue;
+                }
+                ++voice->frame;
+                break;
             case SFX_DOOR:
                 if (voice->frame == 0)
                 {

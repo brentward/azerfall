@@ -14,8 +14,10 @@
                 "emu"
             ],
             "windows": {
-                "debugAdapterExecutable": "${command:python.interpreterPath}",
+                "debugAdapterExecutable": "${env:ComSpec}",
                 "debugAdapterArgs": [
+                    "/c",
+                    "python",
                     "${workspaceFolder}\\tools\\rp6502.py",
                     "-c",
                     "${workspaceFolder}\\.rp6502",

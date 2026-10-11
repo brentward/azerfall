@@ -49,18 +49,20 @@ void npc_oldman_init(entity_t *oldman, player_t *player, uint8_t config_slot, in
     oldman->type = ENTITY_NPC_OLDMAN;
     oldman->world_x = world_x;
     oldman->world_y = world_y;
+    oldman->config_slot = config_slot;
     oldman->speed = 1;
     oldman->max_life = 1;
     oldman->life = oldman->max_life;
     oldman->xram_sprite_ptr = XRAM_NPC_IMAGES + OLDMAN_DIR0_FRAME0 * BYTES_PER_SPRITE;
+    oldman->xram_palette_ptr = XRAM_NPC_PALETTE;
     screen_position = get_screen_position_entity(oldman, player);
     oldman->screen_x = screen_position.screen_x;
     oldman->screen_y = screen_position.screen_y;
 
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, oldman->screen_x);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, oldman->screen_y);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, oldman->xram_sprite_ptr);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_NPC_PALETTE);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(oldman->config_slot), vga_mode5_sprite_t, x_pos_px, oldman->screen_x);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(oldman->config_slot), vga_mode5_sprite_t, y_pos_px, oldman->screen_y);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(oldman->config_slot), vga_mode5_sprite_t, xram_sprite_ptr, oldman->xram_sprite_ptr);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(oldman->config_slot), vga_mode5_sprite_t, palette_ptr, oldman->xram_palette_ptr);
 }
 
 void npc_merchant_init(entity_t *merchant, player_t *player, uint8_t config_slot, int16_t world_x, int16_t world_y)
@@ -80,15 +82,17 @@ void npc_merchant_init(entity_t *merchant, player_t *player, uint8_t config_slot
     merchant->type = ENTITY_NPC_MERCHANT;
     merchant->world_x = world_x;
     merchant->world_y = world_y;
+    merchant->config_slot = config_slot;
     merchant->xram_sprite_ptr = XRAM_NPC_IMAGES + MERCHANT_DIR0_FRAME0 * BYTES_PER_SPRITE;
+    merchant->xram_palette_ptr = XRAM_NPC_PALETTE;
     screen_position = get_screen_position_entity(merchant, player);
     merchant->screen_x = screen_position.screen_x;
     merchant->screen_y = screen_position.screen_y;
 
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, merchant->screen_x);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, merchant->screen_y);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, merchant->xram_sprite_ptr);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_NPC_PALETTE);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(merchant->config_slot), vga_mode5_sprite_t, x_pos_px, merchant->screen_x);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(merchant->config_slot), vga_mode5_sprite_t, y_pos_px, merchant->screen_y);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(merchant->config_slot), vga_mode5_sprite_t, xram_sprite_ptr, merchant->xram_sprite_ptr);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(merchant->config_slot), vga_mode5_sprite_t, palette_ptr, merchant->xram_palette_ptr);
 }
 
 void npc_oldman_update(entity_t *oldman)

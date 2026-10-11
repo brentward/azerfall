@@ -97,6 +97,36 @@ int main(void)
     sound_update();
     assert(voices[0].sound == SFX_NONE);
     assert(!(test_registers[0xB7] & 0x20));
+    /* Slash sweeps on either channel, ends promptly, and can be retriggered
+     * without interrupting a longer effect on the other channel. */
+    sound_play(SFX_DOOR);
+    sound_play(SFX_SWORD);
+    sound_play(SFX_PICKUP);
+    assert(voices[0].sound == SFX_DOOR && voices[1].sound == SFX_SWORD);
+    sound_update();
+    assert(!(test_registers[0xB8] & 0x20));
+    for (i = 0; i < SWORD_FRAMES; ++i)
+    {
+        sound_update();
+        assert(voices[1].sound == SFX_SWORD);
+        assert(test_registers[0xB8] ==
+               (0x20 | (SWORD_BLOCK << 2) | (sword_fnum[i] >> 8)));
+        assert(test_registers[0xA8] == (unsigned char)sword_fnum[i]);
+        assert(test_registers[0x55] == sword_level[i]);
+    }
+    sound_update();
+    assert(voices[0].sound == SFX_DOOR && voices[1].sound == SFX_NONE);
+    assert(!(test_registers[0xB8] & 0x20));
+    assert(test_registers[0x55] == 63);
+    sound_play(SFX_SWORD);
+    assert(voices[1].sound == SFX_SWORD && voices[1].frame == 0);
+    sound_init();
+    sound_play(SFX_SWORD);
+    sound_update();
+    sound_update();
+    assert(test_registers[0xB7] & 0x20);
+    assert(test_registers[0xC7] == 0x0E);
+    assert(test_registers[0x54] == sword_level[0]);
     return 0;
 }
 '''

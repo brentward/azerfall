@@ -47,19 +47,21 @@ void monster_greenslime_init(entity_t *greenslime, player_t *player, uint8_t con
     greenslime->type = ENTITY_MONSTER_GREENSLIME;
     greenslime->world_x = world_x;
     greenslime->world_y = world_y;
+    greenslime->config_slot = config_slot;
     greenslime->speed = 1;
     greenslime->max_life = 4;
     greenslime->life = greenslime->max_life;
     greenslime->attack = 1;
     greenslime->xram_sprite_ptr = XRAM_MONSTER_IMAGES + GREENSLIME_FRAME0 * BYTES_PER_SPRITE;
+    greenslime->xram_palette_ptr = XRAM_MONSTER_PALETTE;
     screen_position = get_screen_position_entity(greenslime, player);
     greenslime->screen_x = screen_position.screen_x;
     greenslime->screen_y = screen_position.screen_y;
 
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, greenslime->screen_x);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, greenslime->screen_y);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, greenslime->xram_sprite_ptr);
-    xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, palette_ptr, XRAM_MONSTER_PALETTE);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(greenslime->config_slot), vga_mode5_sprite_t, x_pos_px, greenslime->screen_x);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(greenslime->config_slot), vga_mode5_sprite_t, y_pos_px, greenslime->screen_y);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(greenslime->config_slot), vga_mode5_sprite_t, xram_sprite_ptr, greenslime->xram_sprite_ptr);
+    xram0_struct_set(XRAM_SPRITE_CONFIG(greenslime->config_slot), vga_mode5_sprite_t, palette_ptr, greenslime->xram_palette_ptr);
 }
 
 void monster_greenslime_update(entity_t *greenslime)
