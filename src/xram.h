@@ -3,7 +3,7 @@
 #ifndef XRAM_H
 #define XRAM_H
 
-#include <rp6502.h>
+// #include <rp6502.h>
 #include "rp5602-compat.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -14,6 +14,7 @@
 #include "../generated/object_sprites.h"
 #include "../generated/npc_sprites.h"
 #include "../generated/monster_sprites.h"
+#include "../generated/weapon_sprites.h"
 
 /* Insert xram.h snippets from docs to build your system. */
 /* https://picocomputer.github.io/sdk.html#xram-memory-map */
@@ -123,10 +124,12 @@
 #define SPRITE_LIMIT   32U
 
 #define PLAYER_SPRITE_COUNT 2
+#define PAUSE_SPRITE_COUNT 2
 #define OBJECT_COUNT 7
 #define NPC_COUNT 4
 #define MONSTER_COUNT 6
-#define OBJECT_SPRITE_SLOT_START PLAYER_SPRITE_COUNT
+#define PAUSE_SPRITE_SLOT_START PLAYER_SPRITE_COUNT
+#define OBJECT_SPRITE_SLOT_START (PAUSE_SPRITE_SLOT_START + PAUSE_SPRITE_COUNT)
 #define NPC_SPRITE_SLOT_START (OBJECT_SPRITE_SLOT_START + OBJECT_COUNT)
 #define MONSTER_SPRITE_SLOT_START (NPC_SPRITE_SLOT_START + NPC_COUNT)
 #define TOTAL_SPRITE_COUNT (MONSTER_SPRITE_SLOT_START + MONSTER_COUNT)
@@ -322,6 +325,7 @@ typedef struct
     MODE5_IMAGE(OBJECT_SPRITES_BPP, OBJECT_SPRITES_WIDTH) object_images[OBJECT_SPRITES_COUNT];
     MODE5_IMAGE(NPC_SPRITES_BPP, NPC_SPRITES_WIDTH) npc_images[NPC_SPRITES_COUNT];
     MODE5_IMAGE(MONSTER_SPRITES_BPP, MONSTER_SPRITES_WIDTH) monster_images[MONSTER_SPRITES_COUNT];
+    MODE5_IMAGE(WEAPON_SPRITES_BPP, WEAPON_SPRITES_WIDTH) weapon_images[WEAPON_SPRITES_COUNT];
     uint8_t song_data[SONG_DATA_MAX_BYTES];
     mode1_4bpp_data_t ui_upper[UI_UPPER_SIZE];
     mode1_4bpp_data_t ui_title[UI_TITLE_SIZE];
@@ -333,6 +337,7 @@ typedef struct
     uint16_t object_palette[1 << OBJECT_SPRITES_BPP];
     uint16_t npc_palette[1 << NPC_SPRITES_BPP];
     uint16_t monster_palette[1 << MONSTER_SPRITES_BPP];
+    uint16_t weapon_palette[1 << WEAPON_SPRITES_BPP];
     mode5_sprite_t sprite_configs[SPRITE_LIMIT];
     mode1_config_t ui_upper_config;
     mode1_config_t ui_title_config;
@@ -357,12 +362,14 @@ typedef struct
 #define XRAM_OBJECT_IMAGES offsetof(xram_layout_t, object_images)
 #define XRAM_NPC_IMAGES offsetof(xram_layout_t, npc_images)
 #define XRAM_MONSTER_IMAGES offsetof(xram_layout_t, monster_images)
+#define XRAM_WEAPON_IMAGES offsetof(xram_layout_t, weapon_images)
 #define XRAM_SONG_DATA offsetof(xram_layout_t, song_data)
 #define XRAM_WORLD_PALETTE offsetof(xram_layout_t, world_palette)
 #define XRAM_PLAYER_PALETTE offsetof(xram_layout_t, player_palette)
 #define XRAM_OBJECT_PALETTE offsetof(xram_layout_t, object_palette)
 #define XRAM_NPC_PALETTE offsetof(xram_layout_t, npc_palette)
 #define XRAM_MONSTER_PALETTE offsetof(xram_layout_t, monster_palette)
+#define XRAM_WEAPON_PALETTE offsetof(xram_layout_t, weapon_palette)
 #define XRAM_UI_UPPER offsetof(xram_layout_t, ui_upper)
 #define XRAM_UI_TITLE offsetof(xram_layout_t, ui_title)
 #define XRAM_UI_PAUSE offsetof(xram_layout_t, ui_pause)

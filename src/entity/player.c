@@ -25,10 +25,14 @@ void player_init(player_t *player)
     entity_t *entity;
     hitbox_t *hitbox;
     hitbox_t *attack_hitbox;
+    weapon_t *weapon;
+    shield_t *shield;
 
     memset(player, 0, sizeof *player);
 
     entity = &player->entity;
+    weapon = &player->current_weapon;
+    shield = &player->current_shield;
     entity->world_x = 368;
     entity->world_y = 336;
     entity->speed = 1;
@@ -56,7 +60,19 @@ void player_init(player_t *player)
     hitbox->y = 5;
     hitbox->width = 10;
     hitbox->height = 10;
+
+    weapon->weapon_type = WEAPON_NONE;
+    weapon->attack_value = 0;
+
+    shield->shield_type = SHIELD_NONE;
+    shield->defense_value = 0;
     
+    player->level = 1;
+    player->strenth = 1;
+    player->dexterity = 1;
+    player->exp = 0;
+    player->next_level_exp = 5;
+    player->coin = 0;
     player->screen_org_x = PLAYER_SCREEN_X - entity->world_x;
     player->screen_org_y = PLAYER_SCREEN_Y - entity->world_y;
     // // testing
@@ -201,7 +217,7 @@ void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[
 
             if (input_state.interact_pressed)
                 player_interact_facing(player, objects, npcs);
-            if (input_state.attack_pressed)
+            if (input_state.attack_pressed && player->current_weapon.weapon_type != WEAPON_NONE)
             {
                 sound_play(SFX_SWORD);
                 entity->state = ENTITY_ATTACKING;
@@ -228,6 +244,17 @@ void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[
     // input_state.interact_pressed = false; // consume pressed interactions
     player_animation_update(player);
 }
+
+uint8_t player_get_attack(player_t *player)
+{
+    return player->strenth * player->current_weapon.attack_value;
+}
+
+uint8_t player_get_defense(player_t *player)
+{
+    return player->dexterity * player->current_shield.defense_value;
+}
+
 
 void player_attacking(player_t *player,  entity_t monsters[MONSTER_COUNT])
 {
@@ -354,7 +381,7 @@ static void player_attack_monster(player_t *player, entity_t *monsters, uint8_t 
 
     if (index != 255)
     {
-        entity_damage(monster, entity->attack);
+        entity_damage(monster, player_get_attack(player));
     }
   
 }

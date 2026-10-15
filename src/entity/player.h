@@ -7,6 +7,7 @@
 #include "npc.h"
 #include "../game/game.h"
 #include "../object/object.h"
+#include "../weapon/weapon.h"
 
 #define PLAYER_SPRITE_SLOT 0U
 #define PLAYER_WEAPON_SLOT 1U
@@ -87,7 +88,14 @@ typedef struct player_t {
     entity_t entity;
     int16_t screen_org_x;
     int16_t screen_org_y;
-
+    uint8_t strenth;
+    uint8_t dexterity;
+    uint8_t level;
+    uint8_t exp;
+    uint8_t next_level_exp;
+    uint8_t coin;
+    weapon_t current_weapon;
+    shield_t current_shield;
     uint8_t key_count;
 } player_t;
 
@@ -97,6 +105,5 @@ void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[
 void player_draw(player_t *player);
 void player_damage(player_t *player, uint8_t attack);
 void player_attacking(player_t *player,  entity_t monsters[MONSTER_COUNT]);
-
 
 #endif // PLAYER_H

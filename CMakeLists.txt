@@ -32,4 +32,6 @@ target_sources(azerfall PRIVATE
     src/game/event.c
     src/entity/monster.c
     generated/monster_sprites.c
+    generated/weapon_sprites.c
+    src/weapon/weapon.c
 )

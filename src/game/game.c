@@ -16,6 +16,7 @@
 #include "event.h"
 #include "../entity/npc.h"
 #include "../entity/monster.h"
+#include "../weapon/weapon.h"
 
 
 static player_t player;
@@ -51,6 +52,7 @@ void game_init(void)
     object_sprite_init();
     npc_sprite_init();
     monster_sprite_init();
+    weapon_sprite_init();
     background_init();
     set_objects();
     set_npcs();

@@ -8,6 +8,7 @@
 #include "player.h"
 #include "../graphics/graphics.h"
 #include "../game/ui.h"
+#include "../weapon/weapon.h"
 
 
 void npc_sprite_init(void)
@@ -144,6 +145,12 @@ void npc_speak(npc_t *npc, player_t *player)
         npc->dialogue_index++;
         if (npc->dialogue_index >= 4 || npc->dialogue_lines[npc->dialogue_index] == NULL)
         {
+            if (entity->type == ENTITY_NPC_OLDMAN &&
+                player->current_weapon.weapon_type == WEAPON_NONE)
+            {
+                weapon_normal_sword_init(player);
+            }
+           
             npc->dialogue_index = 0;
         }
         switch (player_entity->direction)
