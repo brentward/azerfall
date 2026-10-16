@@ -6,8 +6,26 @@
 #include "monster.h"
 #include "../graphics/graphics.h"
 #include "../world/collision.h"
+#include "../audio/sound.h"
 
 static void entity_animation_update(entity_t *entity);
+
+uint16_t entity_movement_steps(entity_t *entity, int move_x, int move_y)
+{
+    uint16_t speed = entity->speed;
+    uint16_t fraction;
+    uint16_t steps;
+
+    if (move_x == 0 && move_y == 0)
+        return 0;
+    /* Approximate 1/sqrt(2), keeping all arithmetic within 16 bits. */
+    if (move_x != 0 && move_y != 0)
+        speed = (speed >> 8) * 181U + (((speed & 255U) * 181U) >> 8);
+    fraction = (speed & 255U) + entity->move_fraction;
+    steps = (speed >> 8) + (fraction >> 8);
+    entity->move_fraction = (uint8_t)fraction;
+    return steps;
+}
 
 // Do not call with the entity_t in player_t types
 void entity_update(entity_t *entity, struct player_t *player, struct object_t *objects, npc_t *npcs, entity_t *monsters)
@@ -17,6 +35,7 @@ void entity_update(entity_t *entity, struct player_t *player, struct object_t *o
 
     int move_x;
     int move_y;
+    uint16_t steps;
 
     if (entity->state == ENTITY_DEAD)
         return;
@@ -71,35 +90,38 @@ void entity_update(entity_t *entity, struct player_t *player, struct object_t *o
             move_y = 0;
             break;
     }
-    dx = move_x * entity->speed;
-    dy = move_y * entity->speed;
-    entity->state = (dx != 0 || dy != 0) ? ENTITY_WALKING : ENTITY_IDLE;
+    dx = move_x;
+    dy = move_y;
+    steps = entity_movement_steps(entity, move_x, move_y);
+    entity->state = (move_x != 0 || move_y != 0) ? ENTITY_WALKING : ENTITY_IDLE;
     entity->collision_on = false;
-    if (entity->state == ENTITY_IDLE)
+    /* Check each pixel independently so faster entities cannot skip obstacles. */
+    while (steps != 0)
     {
-        entity_animation_update(entity);
-        return;
-    }
-    entity->collision_on = false;
-    collision_check_tiles(entity, dx, dy);
-    if (!entity->collision_on)
-        collision_check_object(entity, objects, dx, dy);
-    if (!entity->collision_on)
-        collision_check_npcs(entity, npcs, dx, dy);
-    if (!entity->collision_on)
-        collision_check_monsters(entity, monsters, dx, dy);
-    if (!entity->collision_on)
-    {
-        collision_check_player(entity, player, dx, dy);
-        if (entity->collision_on && entity->type == ENTITY_MONSTER_GREENSLIME)
-            player_damage(player, entity->attack);
-    }
-        
+        --steps;
+        entity->collision_on = false;
+        collision_check_tiles(entity, dx, dy);
+        if (!entity->collision_on)
+            collision_check_object(entity, objects, dx, dy);
+        if (!entity->collision_on)
+            collision_check_npcs(entity, npcs, dx, dy);
+        if (!entity->collision_on)
+            collision_check_monsters(entity, monsters, dx, dy);
+        if (!entity->collision_on)
+        {
+            collision_check_player(entity, player, dx, dy);
+            if (entity->collision_on && entity->type == ENTITY_MONSTER_GREENSLIME)
+                player_damage(player, entity->attack);
+        }
 
-    if (!entity->collision_on)
-    {
-        entity->world_x += dx;
-        entity->world_y += dy;
+
+        if (!entity->collision_on)
+        {
+            entity->world_x += dx;
+            entity->world_y += dy;
+        }
+        else
+            break;
     }
     if (entity->invincible)
     {
@@ -131,7 +153,6 @@ static void entity_animation_update(entity_t *entity)
                 entity->state = ENTITY_DEAD;
                 entity->animation_frame = 0;
                 entity->action_lock_counter = 0;
-                xram0_struct_set(XRAM_SPRITE_CONFIG(entity->config_slot), vga_mode5_sprite_t, x_pos_px, -16);
                 return;
             }
         }
@@ -230,9 +251,20 @@ static void entity_animation_update(entity_t *entity)
 
 void entity_damage(entity_t *entity, uint8_t attack)
 {
-    if (!entity->invincible && attack > 0 && entity->life > 0)
+    uint8_t damage;
+    if (attack == 0){
+        damage = 0;
+    }
+    else if (entity->defense >= attack) {
+        damage = 1;
+    } else {
+        damage = attack - entity->defense;
+    }
+    if (!entity->invincible && damage > 0 && entity->life > 0)
     {
-        entity->life = attack >= entity->life ? 0 : entity->life - attack;
+        entity->life = damage >= entity->life ? 0 : entity->life - damage;
+        if (entity->type == ENTITY_MONSTER_GREENSLIME)
+            sound_play(SFX_MONSTER_DAMAGE);
         entity->invincible = true;
         entity->invincible_counter = 0;
     }
@@ -248,12 +280,27 @@ void entity_prepare_draw(entity_t *entity, player_t *player)
 
     entity->screen_x = screen_position.screen_x;
     entity->screen_y = screen_position.screen_y;
+    /* Dying monsters have no collision hitbox but still have a sprite. */
+    entity->sprite_visible = entity->state != ENTITY_DEAD &&
+        (entity->state == ENTITY_DYING ||
+         (entity->hitbox.width != 0 && entity->hitbox.height != 0)) &&
+        sprite_is_on_screen(entity->screen_x, entity->screen_y);
     /* entity_animation_update already selected the NPC's direction and frame. */
 }
 
 
 void entity_draw(entity_t *entity, uint8_t config_slot)
 {
+    if (!entity->sprite_visible)
+    {
+        if (!entity->sprite_hidden)
+        {
+            xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, -16);
+            entity->sprite_hidden = true;
+        }
+        return;
+    }
+    entity->sprite_hidden = false;
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, entity->screen_x);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, entity->screen_y);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, entity->xram_sprite_ptr);

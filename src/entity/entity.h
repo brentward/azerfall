@@ -12,6 +12,7 @@
 #define DIR_RIGHT_DIVIDE ((DIR_DIVISOR * 4U) - 1U)
 
 #define ANIMATION_FRAMES 4
+#define ENTITY_SPEED_ONE 256U /* One pixel per update; 128 = half speed. */
 
 
 struct player_t;
@@ -57,12 +58,17 @@ typedef struct {
     int16_t world_y;
     int16_t screen_x;
     int16_t screen_y;
+    bool sprite_visible; /* Prepared before the timed draw phase. */
+    bool sprite_hidden;  /* Hardware slot has already been hidden. */
     uint8_t config_slot;
 
     uint8_t max_life;
     uint8_t life;
     uint8_t attack;
-    uint8_t speed;
+    uint8_t defense;
+    uint8_t exp;
+    uint16_t speed; /* Pixels per update in units of 1/256 pixel. */
+    uint8_t move_fraction;
     direction_t direction;
     bool collision_on;
     bool invincible;
@@ -81,6 +87,8 @@ typedef struct {
 } entity_t;
 
 void entity_update(entity_t *entity, struct player_t *player, struct object_t *objects, struct npc_t *npcs, entity_t *monsters);
+/* Consume this update's movement budget, including when movement is blocked. */
+uint16_t entity_movement_steps(entity_t *entity, int move_x, int move_y);
 void entity_damage(entity_t *entity, uint8_t attack);
 void entity_prepare_draw(entity_t *entity, struct player_t *player);
 void entity_draw(entity_t *entity, uint8_t config_slot);

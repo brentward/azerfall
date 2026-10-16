@@ -5,6 +5,16 @@ publish: azerfall.zip
 -->
 [![Play Azerfall](https://brentward.github.io/azerfall/azerfall/screenshot.png)](https://brentward.github.io/azerfall/azerfall/)
 
+## Playing
+
+| Action | Keyboard | Gamepad |
+|---|---|---|---|
+| Move | W, A, S, D | D-Pad or Left Stick |
+| Menu Select/Action/Dialog | E |  B |
+| Attack | Enter |  A |
+| Pause | P |  Start |
+| Character Menu | C |  Select |
+
 Azerfall is a 2D tile-based adventure game being ported to the
 [RP6502](https://picocomputer.github.io/) platform. The project is currently
 in its early porting stage: the RP6502 build and ROM packaging are in place,

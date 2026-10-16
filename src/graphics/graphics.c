@@ -1,5 +1,12 @@
 #include "graphics.h"
 
+bool sprite_is_on_screen(int16_t x, int16_t y)
+{
+    /* Mode 5 sprites are 16x16; include partially visible sprites. */
+    return x > -16 && x < SCREEN_WIDTH &&
+           y > -16 && y < SCREEN_HEIGHT;
+}
+
 screen_position_t get_screen_position_object(object_t *obj, player_t *player)
 {
     screen_position_t screen_position;

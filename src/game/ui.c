@@ -500,7 +500,7 @@ void ui_show_character_screen(player_t *player)
     digit = player_stats;
     row++;
     col = 9;
-    utoa(player->coin, player_stats, 10);
+    utoa(entity->exp, player_stats, 10);
         for (; *digit != '\0'; digit++)
     {
         c = *digit;
@@ -512,7 +512,7 @@ void ui_show_character_screen(player_t *player)
     }
     digit = player_stats;
     col = 21;
-    utoa(player->exp, player_stats, 10);
+    utoa(player->coin, player_stats, 10);
         for (; *digit != '\0'; digit++)
     {
         c = *digit;

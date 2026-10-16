@@ -137,12 +137,24 @@ void object_prepare_draw(object_t *obj, player_t *player)
 
     obj->screen_x = screen_position.screen_x;
     obj->screen_y = screen_position.screen_y;
+    obj->sprite_visible = obj->hitbox.width != 0 && obj->hitbox.height != 0 &&
+        sprite_is_on_screen(obj->screen_x, obj->screen_y);
     obj->xram_sprite_ptr = XRAM_OBJECT_IMAGES + obj->state * BYTES_PER_SPRITE;
 }
 
 
 void object_draw(object_t *obj, uint8_t config_slot)
 {    
+    if (!obj->sprite_visible)
+    {
+        if (!obj->sprite_hidden)
+        {
+            xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, -16);
+            obj->sprite_hidden = true;
+        }
+        return;
+    }
+    obj->sprite_hidden = false;
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, x_pos_px, obj->screen_x);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, y_pos_px, obj->screen_y);
     xram0_struct_set(XRAM_SPRITE_CONFIG(config_slot), vga_mode5_sprite_t, xram_sprite_ptr, obj->xram_sprite_ptr);

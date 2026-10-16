@@ -23,12 +23,23 @@
 #define SWORD_BLOCK 4
 #define SWORD_MOD_LEVEL 0x00
 
+#define DAMAGE_FRAMES 9     /* About 150 ms, omitting the reference's silence. */
+#define DAMAGE_BLOCK 4       /* One octave lower for a deeper impact. */
+#define DAMAGE_MOD_LEVEL 0x00 /* Maximum modulation depth for a rough impact. */
+
+#define LEVEL_UP_BLOCK 6
+#define LEVEL_UP_QUARTER_FRAMES 30 /* 120 BPM at the 60 Hz sound clock. */
+#define LEVEL_UP_GAP_FRAMES 2
+
 
 typedef enum {
     SFX_NONE,
     SFX_DOOR,
     SFX_PICKUP,
-    SFX_SWORD
+    SFX_SWORD,
+    SFX_DAMAGE,
+    SFX_MONSTER_DAMAGE,
+    SFX_LEVEL_UP
 } sfx_id_t;
 
 

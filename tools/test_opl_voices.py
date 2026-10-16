@@ -127,6 +127,85 @@ int main(void)
     assert(test_registers[0xB7] & 0x20);
     assert(test_registers[0xC7] == 0x0E);
     assert(test_registers[0x54] == sword_level[0]);
+    /* Damage must preempt a busy second voice without changing the first. */
+    sound_init();
+    sound_play(SFX_DOOR);
+    sound_play(SFX_PICKUP);
+    sound_update();
+    sound_update();
+    sound_play(SFX_DAMAGE);
+    assert(voices[0].sound == SFX_DOOR);
+    assert(voices[1].sound == SFX_DAMAGE && voices[1].frame == 0);
+    sound_update();
+    assert(!(test_registers[0xB8] & 0x20));
+    for (i = 0; i < DAMAGE_FRAMES; ++i)
+    {
+        sound_update();
+        assert(voices[1].sound == SFX_DAMAGE);
+        assert(test_registers[0xB8] ==
+               (0x20 | (DAMAGE_BLOCK << 2) | (damage_fnum[i] >> 8)));
+        assert(test_registers[0xA8] == (unsigned char)damage_fnum[i]);
+        assert(test_registers[0x55] == damage_level[i]);
+    }
+    sound_update();
+    assert(voices[0].sound == SFX_DOOR && voices[1].sound == SFX_NONE);
+    assert(!(test_registers[0xB8] & 0x20));
+    assert(test_registers[0x55] == 63);
+    /* Retrigger on the first free channel after releasing both voices. */
+    sound_init();
+    sound_play(SFX_DAMAGE);
+    sound_update();
+    sound_update();
+    assert(voices[0].sound == SFX_DAMAGE);
+    assert(test_registers[0xB7] & 0x20);
+    assert(test_registers[0x54] == damage_level[0]);
+    /* Monster hits reverse both pitch and attenuation, alongside a slash. */
+    sound_init();
+    sound_play(SFX_SWORD);
+    sound_play(SFX_MONSTER_DAMAGE);
+    sound_update();
+    assert(!(test_registers[0xB8] & 0x20));
+    for (i = 0; i < DAMAGE_FRAMES; ++i)
+    {
+        sound_update();
+        assert(voices[1].sound == SFX_MONSTER_DAMAGE);
+        assert(test_registers[0xB8] ==
+               (0x20 | (DAMAGE_BLOCK << 2) |
+                (damage_fnum[DAMAGE_FRAMES - 1 - i] >> 8)));
+        assert(test_registers[0xA8] ==
+               (unsigned char)damage_fnum[DAMAGE_FRAMES - 1 - i]);
+        assert(test_registers[0x55] == damage_level[DAMAGE_FRAMES - 1 - i]);
+    }
+    sound_update();
+    assert(voices[1].sound == SFX_NONE);
+    assert(!(test_registers[0xB8] & 0x20));
+    assert(test_registers[0x55] == 63);
+    /* The four flute notes start exactly one quarter note apart, even
+     * when the level-up request must replace an occupied second voice. */
+    sound_init();
+    sound_play(SFX_DOOR);
+    sound_play(SFX_MONSTER_DAMAGE);
+    sound_play(SFX_LEVEL_UP);
+    assert(voices[0].sound == SFX_DOOR);
+    assert(voices[1].sound == SFX_LEVEL_UP);
+    sound_update();
+    assert(!(test_registers[0xB8] & 0x20));
+    for (i = 0; i < 4 * LEVEL_UP_QUARTER_FRAMES; ++i)
+    {
+        unsigned note = i / LEVEL_UP_QUARTER_FRAMES;
+        unsigned phase = i % LEVEL_UP_QUARTER_FRAMES;
+        sound_update();
+        assert(voices[1].sound == SFX_LEVEL_UP);
+        assert(test_registers[0xA8] == (unsigned char)level_up_fnum[note]);
+        assert(test_registers[0xB8] ==
+               ((phase < LEVEL_UP_QUARTER_FRAMES - LEVEL_UP_GAP_FRAMES ? 0x20 : 0) |
+                (LEVEL_UP_BLOCK << 2) | (level_up_fnum[note] >> 8)));
+        assert(test_registers[0xF2] == 0 && test_registers[0xF5] == 0);
+        assert(test_registers[0xC8] == 0);
+    }
+    sound_update();
+    assert(voices[1].sound == SFX_NONE);
+    assert(test_registers[0x55] == 63);
     return 0;
 }
 '''

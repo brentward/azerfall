@@ -35,13 +35,14 @@ void player_init(player_t *player)
     shield = &player->current_shield;
     entity->world_x = 368;
     entity->world_y = 336;
-    entity->speed = 1;
+    entity->speed = ENTITY_SPEED_ONE;
     entity->direction = DIR_DOWN;
     entity->state = ENTITY_WALKING;
     entity->max_life = 12;
     entity->life = entity->max_life;
     entity->invincible = false;
     entity->attack = 1;
+    entity->exp = 0;
 
 
 
@@ -70,7 +71,7 @@ void player_init(player_t *player)
     player->level = 1;
     player->strenth = 1;
     player->dexterity = 1;
-    player->exp = 0;
+    // player->exp = 0;
     player->next_level_exp = 5;
     player->coin = 0;
     player->screen_org_x = PLAYER_SCREEN_X - entity->world_x;
@@ -125,6 +126,7 @@ void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[
     bool blocked_x;
     int16_t dx;
     int16_t dy;
+    uint16_t steps;
 
     // Resolve each axis independently so opposing directions cancel.
     int move_x = input_state.right_pressed - input_state.left_pressed;
@@ -144,76 +146,86 @@ void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[
                 else if (move_y == 0)
                     entity->direction = move_x < 0 ? DIR_LEFT : DIR_RIGHT;
             }
-            dx = move_x * entity->speed;
-            dy = move_y * entity->speed;
+            dx = move_x;
+            dy = move_y;
+            steps = entity_movement_steps(entity, move_x, move_y);
 
             entity->collision_on = false;
 
-            if (dx != 0 && dy != 0)
+            while (steps != 0)
             {
-            
-                // Move X first, then test Y from the resulting position.
-                // Keep the last cardinal facing while sliding along an obstacle.
-                collision_check_tiles(entity, dx, 0);
-                if (!entity->collision_on)
-                    object_index_x = collision_check_object(entity, objects, dx, 0);
-                if (!entity->collision_on)
-                    npc_index_x = collision_check_npcs(entity, npcs, dx, 0);
-                if (!entity->collision_on)
-                    monster_index_x = collision_check_monsters(entity, monsters, dx, 0);
-                blocked_x = entity->collision_on;
-                if (!blocked_x)
-                    entity->world_x += dx;
-
+                --steps;
                 entity->collision_on = false;
-                collision_check_tiles(entity, 0, dy);
-                if (!entity->collision_on)
-                    object_index_y = collision_check_object(entity, objects, 0, dy);
-                if (!entity->collision_on)
-                    npc_index_y = collision_check_npcs(entity, npcs, 0, dy);
-                if (!entity->collision_on)
-                    monster_index_y = collision_check_monsters(entity, monsters, 0, dy);
-                
-                if (!entity->collision_on)
-                    entity->world_y += dy;
-                entity->collision_on = entity->collision_on || blocked_x;
-
-                // Interact even when movement is blocked, but only once per object.
-                player_pickup_object(player, objects, object_index_x);
-                if (object_index_y != object_index_x)
-                    player_pickup_object(player, objects, object_index_y);
-                
-                player_interact_npc(player, npcs, npc_index_x);
-
-                if (npc_index_y != npc_index_x)
-                    player_interact_npc(player, npcs, npc_index_y);
-
-                player_interact_monster(player, monsters, monster_index_x);
-
-                if (monster_index_y != monster_index_x)
-                    player_interact_monster(player, monsters, monster_index_y);
-
-            } else 
-            {
-                collision_check_tiles(entity, dx, dy);
-                if (!entity->collision_on)
-                    object_index_x = collision_check_object(entity, objects, dx, dy);
-                if (!entity->collision_on)
-                    npc_index_x = collision_check_npcs(entity, npcs, dx, dy);
-                if (!entity->collision_on)
-                    monster_index_x = collision_check_monsters(entity, monsters, dx, dy);
-
-                player_pickup_object(player, objects, object_index_x);
-                player_interact_npc(player, npcs, npc_index_x);
-                player_interact_monster(player, monsters, monster_index_x);
-
-                if (!entity->collision_on)
+                object_index_x = object_index_y = 255;
+                npc_index_x = npc_index_y = 255;
+                monster_index_x = monster_index_y = 255;
+                if (dx != 0 && dy != 0)
                 {
-                    entity->world_x += dx;
-                    entity->world_y += dy;
-                }
-            }
 
+                    // Move X first, then test Y from the resulting position.
+                    // Keep the last cardinal facing while sliding along an obstacle.
+                    collision_check_tiles(entity, dx, 0);
+                    if (!entity->collision_on)
+                        object_index_x = collision_check_object(entity, objects, dx, 0);
+                    if (!entity->collision_on)
+                        npc_index_x = collision_check_npcs(entity, npcs, dx, 0);
+                    if (!entity->collision_on)
+                        monster_index_x = collision_check_monsters(entity, monsters, dx, 0);
+                    blocked_x = entity->collision_on;
+                    if (!blocked_x)
+                        entity->world_x += dx;
+
+                    entity->collision_on = false;
+                    collision_check_tiles(entity, 0, dy);
+                    if (!entity->collision_on)
+                        object_index_y = collision_check_object(entity, objects, 0, dy);
+                    if (!entity->collision_on)
+                        npc_index_y = collision_check_npcs(entity, npcs, 0, dy);
+                    if (!entity->collision_on)
+                        monster_index_y = collision_check_monsters(entity, monsters, 0, dy);
+
+                    if (!entity->collision_on)
+                        entity->world_y += dy;
+                    entity->collision_on = entity->collision_on || blocked_x;
+
+                    // Interact even when movement is blocked, but only once per object.
+                    player_pickup_object(player, objects, object_index_x);
+                    if (object_index_y != object_index_x)
+                        player_pickup_object(player, objects, object_index_y);
+
+                    player_interact_npc(player, npcs, npc_index_x);
+
+                    if (npc_index_y != npc_index_x)
+                        player_interact_npc(player, npcs, npc_index_y);
+
+                    player_interact_monster(player, monsters, monster_index_x);
+
+                    if (monster_index_y != monster_index_x)
+                        player_interact_monster(player, monsters, monster_index_y);
+
+                } else
+                {
+                    collision_check_tiles(entity, dx, dy);
+                    if (!entity->collision_on)
+                        object_index_x = collision_check_object(entity, objects, dx, dy);
+                    if (!entity->collision_on)
+                        npc_index_x = collision_check_npcs(entity, npcs, dx, dy);
+                    if (!entity->collision_on)
+                        monster_index_x = collision_check_monsters(entity, monsters, dx, dy);
+
+                    player_pickup_object(player, objects, object_index_x);
+                    player_interact_npc(player, npcs, npc_index_x);
+                    player_interact_monster(player, monsters, monster_index_x);
+
+                    if (!entity->collision_on)
+                    {
+                        entity->world_x += dx;
+                        entity->world_y += dy;
+                    }
+                }
+                if (entity->state != ENTITY_WALKING)
+                    break;
+            }
 
             if (input_state.interact_pressed)
                 player_interact_facing(player, objects, npcs);
@@ -402,9 +414,12 @@ static void player_interact_monster(player_t *player, entity_t *monsters, uint8_
 void player_damage(player_t *player, uint8_t attack)
 {
     entity_t *entity = &player->entity;
-    if (!entity->invincible && attack > 0 && entity->life > 0)
+    uint8_t damage;
+    if (!entity->invincible && attack > player_get_defense(player) && entity->life > 0)
     {
-        entity->life = attack >= entity->life ? 0 : entity->life - attack;
+        damage = attack - player_get_defense(player);
+        entity->life = damage >= entity->life ? 0 : entity->life - damage;
+        sound_play(SFX_DAMAGE);
         if (entity->life == 0)
         {
             entity->state = ENTITY_DYING;
@@ -420,7 +435,31 @@ void player_damage(player_t *player, uint8_t attack)
     }
 }
 
+void player_add_exp(player_t *player, uint8_t exp)
+{
+    entity_t *entity = &player->entity;
+    entity->exp += exp;
+}
 
+void player_check_level_up(player_t *player)
+{
+    entity_t *entity = &player->entity;
+    if (entity->exp >= player->next_level_exp)
+    {
+        player->level++;
+        player->next_level_exp = player->next_level_exp * 3;
+        entity->max_life += 4;
+        entity->life += 4;
+        player->strenth++;
+        player->dexterity++;
+        ui_show_dialogue("Level Up!");
+        sound_play(SFX_LEVEL_UP);
+        ui_heart_init(player);
+        /* Include newly added hearts in the renderer's sprite count. */
+        sprite_set_vga_mode();
+        game_state_set(GAME_STATE_DIALOGUE);
+    }
+}
 
 static void player_animation_update(player_t *player)
 {

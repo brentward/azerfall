@@ -14,5 +14,6 @@ typedef struct {
 
 screen_position_t get_screen_position_object(object_t *obj, player_t *player);
 screen_position_t get_screen_position_entity(entity_t *entity, player_t *player);
+bool sprite_is_on_screen(int16_t x, int16_t y);
 
 #endif // GRAPHICS_H

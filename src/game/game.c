@@ -18,6 +18,7 @@
 #include "../entity/monster.h"
 #include "../weapon/weapon.h"
 
+#define ENTITY_ACTIVATION_MARGIN (2 * TILE_SIZE)
 
 static player_t player;
 static game_t game;
@@ -124,6 +125,22 @@ void game_init(void)
 //     puts("BG XRAM OK: config, map, tiles (RIA readback)");
 // }
 
+static bool entity_is_near_camera(const entity_t *entity)
+{
+    int16_t left;
+    int16_t top;
+
+    left = entity->world_x - player.entity.world_x
+         + PLAYER_SCREEN_X + entity->hitbox.x;
+    top = entity->world_y - player.entity.world_y
+        + PLAYER_SCREEN_Y + entity->hitbox.y;
+
+    return left < SCREEN_WIDTH + ENTITY_ACTIVATION_MARGIN &&
+           left + entity->hitbox.width > -ENTITY_ACTIVATION_MARGIN &&
+           top < SCREEN_HEIGHT + ENTITY_ACTIVATION_MARGIN &&
+           top + entity->hitbox.height > -ENTITY_ACTIVATION_MARGIN;
+}
+
 void game_update(void)
 {
     uint8_t i;
@@ -212,9 +229,13 @@ void game_update(void)
         {
             entity_t *entity = &npc->entity;
 
-            if (entity->hitbox.width == 0 || entity->hitbox.height == 0)
+            if (entity->hitbox.width == 0 || entity->hitbox.height == 0){
+                entity->sprite_visible = false;
                 continue;
-            entity_update(entity, &player, objects, npcs, monsters);
+            }
+            if (entity_is_near_camera(entity)){
+                entity_update(entity, &player, objects, npcs, monsters);
+            }
             entity_prepare_draw(entity, &player);
         }
         for (i = 0, monster = monsters; i < MONSTER_COUNT; i++, monster++)
@@ -223,10 +244,15 @@ void game_update(void)
             if (monster->state == ENTITY_DEAD ||
                 (monster->state != ENTITY_DYING &&
                  (monster->hitbox.width == 0 || monster->hitbox.height == 0)))
+            {
+                monster->sprite_visible = false;
                 continue;
+            }
             if (monster->life == 0 && monster->state != ENTITY_DYING)
             {
                 monster->state = ENTITY_DYING;
+                player_add_exp(&player, monster->exp);
+                player_check_level_up(&player);
                 monster->animation_frame = 0;
                 monster->animation_timer = 0;
                 monster->action_lock_counter = 0;
@@ -235,10 +261,13 @@ void game_update(void)
                 monster->xram_palette_ptr = XRAM_MONSTER_PALETTE;
             }
             // if (monster->hitbox.width == 0 || monster->hitbox.height == 0)
-            if (monster->state == ENTITY_DEAD)
-                continue;
-            entity_update(monster, &player, objects, npcs, monsters);
-            entity_prepare_draw(monster, &player);
+            if (monster->state == ENTITY_DYING ||
+                entity_is_near_camera(monster))
+            {
+                entity_update(monster, &player, objects, npcs, monsters);
+            }
+
+            entity_prepare_draw(monster, &player);            
         }
 
         ui_prepare_skipped_frames(&game);
@@ -267,17 +296,11 @@ void timed_update()
     }
     for (i = 0, npc = npcs; i < NPC_COUNT; i++, npc++)
     {
-        if (npc->entity.hitbox.width == 0 || npc->entity.hitbox.height == 0)
-            continue;
         entity_draw(&npc->entity, NPC_SPRITE_SLOT_START + i);
     }
 
     for (i = 0, monster = monsters; i < MONSTER_COUNT; i++, monster++)
     {
-        if (monster->state == ENTITY_DEAD ||
-            (monster->state != ENTITY_DYING &&
-             (monster->hitbox.width == 0 || monster->hitbox.height == 0)))
-            continue;
         entity_draw(monster, MONSTER_SPRITE_SLOT_START + i);
     }
 
@@ -453,8 +476,11 @@ static void set_npcs(void)
 
 static void set_monsters(void)
 {
-    monster_greenslime_init(&monsters[0], &player, MONSTER_SPRITE_SLOT_START, 368, 576);
-    monster_greenslime_init(&monsters[1], &player, MONSTER_SPRITE_SLOT_START + 1, 368, 592);
+    monster_greenslime_init(&monsters[0], &player, MONSTER_SPRITE_SLOT_START, 368, 608);
+    monster_greenslime_init(&monsters[1], &player, MONSTER_SPRITE_SLOT_START + 1, 368, 672);
+    monster_greenslime_init(&monsters[2], &player, MONSTER_SPRITE_SLOT_START + 2, 384, 592);
+    monster_greenslime_init(&monsters[3], &player, MONSTER_SPRITE_SLOT_START + 3, 544, 672);
+    monster_greenslime_init(&monsters[4], &player, MONSTER_SPRITE_SLOT_START + 4, 608, 672);
 }
 
 void game_start(void)

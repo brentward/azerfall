@@ -37,6 +37,8 @@ typedef struct object_t {
     int16_t world_y;
     int16_t screen_x;
     int16_t screen_y;
+    bool sprite_visible;
+    bool sprite_hidden;
 
     hitbox_t hitbox;
 

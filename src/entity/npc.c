@@ -51,7 +51,7 @@ void npc_oldman_init(entity_t *oldman, player_t *player, uint8_t config_slot, in
     oldman->world_x = world_x;
     oldman->world_y = world_y;
     oldman->config_slot = config_slot;
-    oldman->speed = 1;
+    oldman->speed = ENTITY_SPEED_ONE;
     oldman->max_life = 1;
     oldman->life = oldman->max_life;
     oldman->xram_sprite_ptr = XRAM_NPC_IMAGES + OLDMAN_DIR0_FRAME0 * BYTES_PER_SPRITE;

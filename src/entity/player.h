@@ -91,7 +91,7 @@ typedef struct player_t {
     uint8_t strenth;
     uint8_t dexterity;
     uint8_t level;
-    uint8_t exp;
+    // uint8_t exp;
     uint8_t next_level_exp;
     uint8_t coin;
     weapon_t current_weapon;
@@ -107,5 +107,7 @@ void player_damage(player_t *player, uint8_t attack);
 void player_attacking(player_t *player,  entity_t monsters[MONSTER_COUNT]);
 uint8_t player_get_attack(player_t *player);
 uint8_t player_get_defense(player_t *player);
+void player_check_level_up(player_t *player);
+void player_add_exp(player_t *player, uint8_t exp);
 
 #endif // PLAYER_H

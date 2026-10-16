@@ -43,6 +43,18 @@ static const uint8_t sword_level[SWORD_FRAMES] = {
     0, 5, 10, 20, 16, 14, 12, 14, 17, 23
 };
 
+/* receivedamage.wav: rough attack, steep downward sweep, short noisy tail.
+ * This is a synthesized approximation, not sample playback. */
+static const uint16_t damage_fnum[DAMAGE_FRAMES] = {
+    900, 640, 780, 350, 490, 140, 680, 260, 180
+};
+static const uint8_t damage_level[DAMAGE_FRAMES] = {
+    3, 12, 2, 15, 4, 10, 18, 28, 42
+};
+
+/* F6, A#5, F6, A#6, rounded to the nearest OPL frequency number. */
+static const uint16_t level_up_fnum[4] = { 460, 307, 460, 615 };
+
 
 
 static void opl_write(uint8_t reg, uint8_t value)
@@ -88,6 +100,42 @@ static void sword_patch(uint8_t channel)
     opl_write(0x94 + channel, 0x0F);
     opl_write(0xF4 + channel, 0x00);
     opl_write(0xC7 + channel, 0x0E);
+}
+
+static void damage_patch(uint8_t channel)
+{
+    /* Quarter-sine modulation with maximum feedback and a half-frequency
+     * modulator breaks up the tone; half-sine carrier adds hard edges.
+     * Uneven pitch/level steps above give the short burst a crackling attack. */
+    opl_write(0x31 + channel, 0x20);
+    opl_write(0x51 + channel, DAMAGE_MOD_LEVEL);
+    opl_write(0x71 + channel, 0xF0);
+    opl_write(0x91 + channel, 0x0F);
+    opl_write(0xF1 + channel, 0x03);
+
+    opl_write(0x34 + channel, 0x21);
+    opl_write(0x54 + channel, damage_level[0]);
+    opl_write(0x74 + channel, 0xF0);
+    opl_write(0x94 + channel, 0x0F);
+    opl_write(0xF4 + channel, 0x01);
+    opl_write(0xC7 + channel, 0x0E);
+}
+
+static void level_up_patch(uint8_t channel)
+{
+    /* Mostly sine with light 1:1 FM: soft, hollow flute-like tone.
+     * Restore both waveforms/feedback after the crunchy damage patch. */
+    opl_write(0x31 + channel, 0x21);
+    opl_write(0x51 + channel, 0x32);
+    opl_write(0x71 + channel, 0xB0);
+    opl_write(0x91 + channel, 0x08);
+    opl_write(0xF1 + channel, 0x00);
+    opl_write(0x34 + channel, 0x21);
+    opl_write(0x54 + channel, 0x06);
+    opl_write(0x74 + channel, 0xB0);
+    opl_write(0x94 + channel, 0x08);
+    opl_write(0xF4 + channel, 0x00);
+    opl_write(0xC7 + channel, 0x00);
 }
 
 static void pickup_patch(uint8_t channel)
@@ -149,9 +197,14 @@ void sound_play(sfx_id_t sound)
         }
     }
     
-    /* Both slots are occupied: drop the request without touching either. */
+    /* Damage feedback and level-up take priority over the second busy slot.
+     * Frame zero keys it off before installing the new patch. */
     if (i == SFX_CHANNEL_COUNT)
-        return;
+    {
+        if (sound != SFX_DAMAGE && sound != SFX_LEVEL_UP)
+            return;
+        voice = &voices[SFX_CHANNEL_COUNT - 1];
+    }
 
     switch (sound)
     {
@@ -167,8 +220,11 @@ void sound_play(sfx_id_t sound)
             voice->delay = 0;
             break;
 
+        case SFX_LEVEL_UP:
+        case SFX_MONSTER_DAMAGE:
+        case SFX_DAMAGE:
         case SFX_SWORD:
-            voice->sound = SFX_SWORD;
+            voice->sound = sound;
             voice->frame = 0;
             voice->delay = 0;
             break;
@@ -182,6 +238,7 @@ void sound_play(sfx_id_t sound)
 void sound_update(void)
 {
     uint8_t i;
+    uint8_t damage_index;
     sfx_voice_t *voice = voices;
 
     for (i = 0; i < SFX_CHANNEL_COUNT; i++, voice++)
@@ -197,6 +254,57 @@ void sound_update(void)
 
         switch (voice->sound)
         {
+            case SFX_LEVEL_UP:
+                if (voice->frame == 0)
+                    opl_set_pitch(level_up_fnum[0], LEVEL_UP_BLOCK, 0, i);
+                else if (voice->frame <= 8)
+                {
+                    if (voice->frame & 1)
+                    {
+                        if (voice->frame == 1)
+                            level_up_patch(i);
+                        opl_set_pitch(level_up_fnum[voice->frame >> 1], LEVEL_UP_BLOCK, 1, i);
+                        voice->delay = LEVEL_UP_QUARTER_FRAMES - LEVEL_UP_GAP_FRAMES - 1;
+                    }
+                    else
+                    {
+                        opl_set_pitch(level_up_fnum[(voice->frame >> 1) - 1], LEVEL_UP_BLOCK, 0, i);
+                        voice->delay = LEVEL_UP_GAP_FRAMES - 1;
+                    }
+                }
+                else
+                {
+                    opl_write(0x54 + i, 63);
+                    voice->sound = SFX_NONE;
+                    continue;
+                }
+                ++voice->frame;
+                break;
+            case SFX_MONSTER_DAMAGE:
+            case SFX_DAMAGE:
+                if (voice->frame == 0)
+                {
+                    opl_set_pitch(damage_fnum[0], DAMAGE_BLOCK, 0, i);
+                }
+                else if (voice->frame <= DAMAGE_FRAMES)
+                {
+                    if (voice->frame == 1)
+                        damage_patch(i);
+                    /* Reverse the control envelope, retaining the same timbre. */
+                    damage_index = voice->sound == SFX_MONSTER_DAMAGE
+                        ? DAMAGE_FRAMES - voice->frame : voice->frame - 1;
+                    opl_write(0x54 + i, damage_level[damage_index]);
+                    opl_set_pitch(damage_fnum[damage_index], DAMAGE_BLOCK, 1, i);
+                }
+                else
+                {
+                    opl_write(0x54 + i, 63);
+                    opl_set_pitch(damage_fnum[DAMAGE_FRAMES - 1], DAMAGE_BLOCK, 0, i);
+                    voice->sound = SFX_NONE;
+                    continue;
+                }
+                ++voice->frame;
+                break;
             case SFX_SWORD:
                 if (voice->frame == 0)
                 {

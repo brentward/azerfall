@@ -48,10 +48,12 @@ void monster_greenslime_init(entity_t *greenslime, player_t *player, uint8_t con
     greenslime->world_x = world_x;
     greenslime->world_y = world_y;
     greenslime->config_slot = config_slot;
-    greenslime->speed = 1;
+    greenslime->speed = ENTITY_SPEED_ONE * 3U / 4U;
     greenslime->max_life = 4;
     greenslime->life = greenslime->max_life;
-    greenslime->attack = 1;
+    greenslime->attack = 5;
+    greenslime->defense = 0;
+    greenslime->exp = 2;
     greenslime->xram_sprite_ptr = XRAM_MONSTER_IMAGES + GREENSLIME_FRAME0 * BYTES_PER_SPRITE;
     greenslime->xram_palette_ptr = XRAM_MONSTER_PALETTE;
     screen_position = get_screen_position_entity(greenslime, player);
