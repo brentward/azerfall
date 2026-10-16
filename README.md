@@ -8,7 +8,7 @@ publish: azerfall.zip
 ## Playing
 
 | Action | Keyboard | Gamepad |
-|---|---|---|---|
+|---|---|---|
 | Move | W, A, S, D | D-Pad or Left Stick |
 | Menu Select/Action/Dialog | E |  B |
 | Attack | Enter |  A |
