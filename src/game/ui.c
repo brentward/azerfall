@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../entity/player.h"
 #include "../input/input.h"
@@ -261,6 +262,279 @@ void ui_show_dialogue(char *dialogue)
         col++;
     }
 
+}
+
+void ui_show_character_screen(player_t *player)
+{
+    char c;
+    int i;
+    uint8_t row = 0;
+    uint8_t col = 0;
+    char player_stats[4];
+    const char *digit = player_stats;
+    char player_stats_name_array[9];
+    char *player_stat_name = player_stats_name_array;
+    entity_t *entity = &player->entity;
+
+
+    /* Dialogue stays visible until explicitly cleared, without a message timer. */
+    ui.message_on = false;
+    ui.message_counter = 0;
+
+
+    RIA.addr0 = XRAM_UI_MESSAGE;
+    RIA.step0 = 1;
+    for (i = 0; i < UI_MESSAGE_SIZE; i++)
+    {
+        RIA.rw0 = ' '; // data
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+    }
+
+    RIA.addr0 = XRAM_UI_MESSAGE;
+    RIA.step0 = 1;
+
+    strcpy(player_stat_name, "Lvl:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    player_stat_name = player_stats_name_array;
+
+    col = 12;
+    strcpy(player_stat_name, "Life:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    player_stat_name = player_stats_name_array;
+    row++;
+    col = 0;
+    strcpy(player_stat_name, "Str:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    player_stat_name = player_stats_name_array;
+    col = 12;
+    strcpy(player_stat_name, "Dex:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    player_stat_name = player_stats_name_array;
+    row++;
+    col = 0;
+    strcpy(player_stat_name, "Att:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    player_stat_name = player_stats_name_array;
+    col = 12;
+    strcpy(player_stat_name, "Def:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    player_stat_name = player_stats_name_array;
+    row++;
+    col = 0;
+    strcpy(player_stat_name, "Exp:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    player_stat_name = player_stats_name_array;
+    col = 12;
+    strcpy(player_stat_name, "Coin:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    player_stat_name = player_stats_name_array;
+    row++;
+    col = 0;
+    strcpy(player_stat_name, "Nxt Lvl:");
+    for (; *player_stat_name != '\0';)
+    {
+        c = *player_stat_name++;
+ 
+        /* Each cell contains a character byte followed by a color byte. */
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+
+    row = 0;
+    col = 9;
+    utoa(player->level, player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    digit = player_stats;
+    col = 21;
+    utoa(entity->life, player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    digit = player_stats;
+    row++;
+    col = 9;
+    utoa(player->strenth, player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    digit = player_stats;
+    col = 21;
+    utoa(player->dexterity, player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    digit = player_stats;
+    row++;
+    col = 9;
+    utoa(player_get_attack(player), player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    digit = player_stats;
+    col = 21;
+    utoa(player_get_defense(player), player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    digit = player_stats;
+    row++;
+    col = 9;
+    utoa(player->coin, player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    digit = player_stats;
+    col = 21;
+    utoa(player->exp, player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
+    digit = player_stats;
+    row++;
+    col = 9;
+    utoa(player->next_level_exp, player_stats, 10);
+        for (; *digit != '\0'; digit++)
+    {
+        c = *digit;
+        RIA.addr0 = XRAM_UI_MESSAGE +
+            ((uint16_t)row * UI_MESSAGE_WIDTH_CHAR + col) * 2;
+        RIA.rw0 = c;
+        RIA.rw0 = MODE1_BG_FG(ANSI_BLUE, ANSI_BRIGHT_YELLOW);
+        col++;
+    }
 }
 
 void ui_clear_dialogue(void)

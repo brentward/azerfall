@@ -38,5 +38,6 @@ void ui_pause_set_vga_mode(void);
 void ui_message_set_vga_mode(void);
 void ui_lower_set_vga_mode(void);
 void ui_set_vga_mode(void);
+void ui_show_character_screen(struct player_t *player);
 
 #endif // UI_H

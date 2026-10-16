@@ -105,5 +105,7 @@ void player_update(player_t *player, object_t objects[OBJECT_COUNT], npc_t npcs[
 void player_draw(player_t *player);
 void player_damage(player_t *player, uint8_t attack);
 void player_attacking(player_t *player,  entity_t monsters[MONSTER_COUNT]);
+uint8_t player_get_attack(player_t *player);
+uint8_t player_get_defense(player_t *player);
 
 #endif // PLAYER_H

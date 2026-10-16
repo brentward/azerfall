@@ -15,6 +15,7 @@ typedef struct
     bool interact_pressed; /* New press only; consumed after an NPC interaction. */
     bool attack_pressed; /* New press only; clear after consuming an attack. */
     bool pause_pressed;
+    bool character_pressed; /* New press only; opens or closes character state. */
     bool background_reload_pressed;
     bool srand_seeded;
     uint16_t counter;

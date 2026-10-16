@@ -162,6 +162,20 @@ void game_update(void)
         }
     }
 
+    if (input_state.character_pressed)
+    {
+        switch (game.state) {
+        case GAME_STATE_PLAY:
+            game.state = GAME_STATE_CHARACTER;
+            break;
+
+        case GAME_STATE_CHARACTER:
+            game.state = GAME_STATE_PLAY;
+            ui_clear_dialogue();
+            break;
+        }
+    }
+
     if (input_state.interact_pressed)
     {
         switch (game.state) {
@@ -179,6 +193,11 @@ void game_update(void)
         if (game.state == GAME_STATE_TITLE_SCREEN)
             ui_prepare_titlescreen();
         return;
+    }
+
+    if (game.state == GAME_STATE_CHARACTER)
+    {
+        ui_show_character_screen(&player);
     }
 
 

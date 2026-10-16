@@ -17,6 +17,7 @@ input_state_t input_state = {0};
 
 static uint8_t keystates[KEYBOARD_BYTES] = {0};
 static bool pause_was_down = false;
+static bool character_was_down = false;
 static bool reload_was_down = false;
 static bool up_was_down = false;
 static bool down_was_down = false;
@@ -28,6 +29,8 @@ void input_init(void)
     int i;
 
     pause_was_down = false;
+    character_was_down = false;
+    input_state.character_pressed = false;
     reload_was_down = false;
     interact_was_down = false;
     attack_was_down = false;
@@ -64,6 +67,7 @@ void input_update(void)
     bool interaction_down = false;
     bool attack_down = false;
     bool pause_down = false;
+    bool character_down = false;
     bool reload_down = false;
     bool up_down = false;
     bool down_down = false; 
@@ -75,6 +79,7 @@ void input_update(void)
     input_state.left_pressed = false;
     input_state.right_pressed = false;
     input_state.pause_pressed = false;
+    input_state.character_pressed = false;
     input_state.interact_pressed = false;
     input_state.attack_pressed = false;
 
@@ -104,6 +109,7 @@ void input_update(void)
     // RIA.addr1 = XRAM_GAMEPAD + 3;
     buttons = RIA.rw1;
     pause_down = (dpad & GAMEPAD_CONNECTED) && (buttons & GAMEPAD_BTN_START);
+    character_down = (dpad & GAMEPAD_CONNECTED) && (buttons & GAMEPAD_BTN1_SELECT);
 
     if (!(keystates[0] & 1)) // any key pressed?
     {
@@ -113,6 +119,7 @@ void input_update(void)
         input_state.left_pressed = ((key(KEY_A) || key(KEY_LEFT)) != 0);
         input_state.right_pressed = ((key(KEY_D) || key(KEY_RIGHT)) != 0);
         pause_down = pause_down || (key(KEY_P) != 0);
+        character_down = character_down || (key(KEY_C) != 0);
         interaction_down = interaction_down || (key(KEY_E) != 0);
         attack_down = attack_down || ((key(KEY_ENTER) || key(KEY_KPENTER)) != 0);
         reload_down = key(KEY_R) != 0;
@@ -123,6 +130,8 @@ void input_update(void)
     down_down = input_state.down_pressed;
     input_state.pause_pressed = pause_down && !pause_was_down;
     pause_was_down = pause_down;
+    input_state.character_pressed = character_down && !character_was_down;
+    character_was_down = character_down;
     input_state.up_consummable = up_down && !up_was_down;
     up_was_down = up_down;
     input_state.down_consummable = down_down && !down_was_down;
